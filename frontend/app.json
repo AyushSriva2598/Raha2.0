@@ -10,9 +10,7 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
-        }
+        "googleMapsApiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
       }
     },
     "android": {

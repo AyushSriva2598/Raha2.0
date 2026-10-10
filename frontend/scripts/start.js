@@ -46,7 +46,9 @@ if (isTunnel) {
 // Spawn expo start with forwarded arguments
 const isBun = process.env.npm_execpath && process.env.npm_execpath.includes('bun');
 const bin = isBun ? 'bunx' : 'npx';
+const frontendDir = path.resolve(__dirname, '..');
 const child = spawn(bin, ['expo', 'start', ...mappedArgs], {
+  cwd: frontendDir,
   stdio: 'inherit',
   env: {
     ...process.env,
