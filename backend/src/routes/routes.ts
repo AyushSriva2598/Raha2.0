@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db.js';
+import { googleMapsService } from '../services/googleMapsService.js';
 
 const router = Router();
 
@@ -7,7 +8,12 @@ const router = Router();
 router.post('/calculate', async (req: Request, res: Response) => {
   try {
     const { origin, destination, avoidHazards = true } = req.body;
-    const routes = await db.calculateRoutes(origin, destination, avoidHazards);
+
+    // Check if Google Maps Directions API returns an active walking evacuation route
+    const googleRoute = origin && destination ? await googleMapsService.calculateWalkingRoute(origin, destination) : null;
+    const dbRoutes = await db.calculateRoutes(origin, destination, avoidHazards);
+
+    const routes = googleRoute ? [googleRoute, ...dbRoutes] : dbRoutes;
     res.json(routes);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

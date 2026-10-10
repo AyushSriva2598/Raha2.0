@@ -8,7 +8,12 @@
     "scheme": "raha",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +22,12 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
+        }
+      }
     },
     "web": {
       "output": "static",

@@ -11,7 +11,6 @@ export const MAP_CONFIG = {
   defaultZoom: 13.8,
   minZoom: 10,
   maxZoom: 18,
-  styleUrl: 'https://tiles.openfreemap.org/styles/liberty',
 };
 
 // GLOF Inundation Hazard Corridor Polygon (Dudh Koshi valley floor)

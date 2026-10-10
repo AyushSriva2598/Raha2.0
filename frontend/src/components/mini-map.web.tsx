@@ -1,15 +1,15 @@
+/// <reference types="@types/google.maps" />
+
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import * as maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
 import { Maximize2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import {
   DINGBOCHE_COORDINATES,
-  MAP_CONFIG,
   HAZARD_INUNDATION_GEOJSON,
 } from '@/constants/geoData';
+import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
 
 interface MiniMapCardProps {
   onPress?: () => void;
@@ -25,7 +25,7 @@ export function MiniMapCard({
   lakeDistText = 'Lake dist: 7.2 km',
 }: MiniMapCardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const handlePress = () => {
     if (onPress) {
@@ -36,66 +36,93 @@ export function MiniMapCard({
   };
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    let isCancelled = false;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: MAP_CONFIG.styleUrl,
-      center: DINGBOCHE_COORDINATES,
-      zoom: 12.2,
-      pitch: 35,
-      interactive: false,
-      attributionControl: false,
-    });
+    loadGoogleMaps()
+      .then((maps) => {
+        if (isCancelled || !containerRef.current) return;
 
-    mapRef.current = map;
+        const center = {
+          lat: DINGBOCHE_COORDINATES[1],
+          lng: DINGBOCHE_COORDINATES[0],
+        };
 
-    map.on('load', () => {
-      map.addSource('hazard-mini', {
-        type: 'geojson',
-        data: HAZARD_INUNDATION_GEOJSON,
+        const map = new maps.Map(containerRef.current, {
+          center,
+          zoom: 12.2,
+          mapTypeId: 'terrain',
+          disableDefaultUI: true,
+          gestureHandling: 'none',
+          keyboardShortcuts: false,
+        });
+
+        mapRef.current = map;
+
+        // Add Hazard Polygon
+        const hazardFeature = HAZARD_INUNDATION_GEOJSON.features[0];
+        if (hazardFeature && hazardFeature.geometry.type === 'Polygon') {
+          const hazardPaths = hazardFeature.geometry.coordinates[0].map(([lng, lat]) => ({
+            lat,
+            lng,
+          }));
+
+          new maps.Polygon({
+            paths: hazardPaths,
+            strokeColor: Colors.warning,
+            strokeOpacity: 0.9,
+            strokeWeight: 2,
+            fillColor: Colors.warning,
+            fillOpacity: 0.35,
+            map,
+            zIndex: 2,
+          });
+        }
+
+        // Add User Location Pin
+        new maps.Marker({
+          position: center,
+          map,
+          title: userLocationText,
+          icon: {
+            path: maps.SymbolPath.CIRCLE,
+            scale: 6,
+            fillColor: Colors.meltwater,
+            fillOpacity: 1.0,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2.5,
+          },
+          zIndex: 10,
+        });
+      })
+      .catch((err) => {
+        console.error('[Google Maps Mini] Failed to initialize:', err);
       });
-
-      map.addLayer({
-        id: 'hazard-mini-fill',
-        type: 'fill',
-        source: 'hazard-mini',
-        paint: {
-          'fill-color': Colors.warning,
-          'fill-opacity': 0.35,
-        },
-      });
-
-      // User pin
-      const userEl = document.createElement('div');
-      userEl.style.width = '14px';
-      userEl.style.height = '14px';
-      userEl.style.borderRadius = '50%';
-      userEl.style.backgroundColor = Colors.meltwater;
-      userEl.style.border = '2.5px solid #FFFFFF';
-      userEl.style.boxShadow = '0 0 8px rgba(32,138,239,0.9)';
-
-      new maplibregl.Marker({ element: userEl })
-        .setLngLat(DINGBOCHE_COORDINATES)
-        .addTo(map);
-    });
 
     return () => {
-      map.remove();
+      isCancelled = true;
     };
-  }, []);
+  }, [userLocationText]);
 
   return (
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
       onPress={handlePress}>
-      {/* Real Mini Map Canvas */}
+      {/* Real Google Maps Mini Canvas */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+        <div
+          ref={containerRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+          }}
+        />
       </View>
 
       {/* Header Info Overlay */}
-      <View style={styles.headerRow}>
+      <View style={styles.headerRow} pointerEvents="none">
         <View style={styles.titleBadge}>
           <Text style={styles.basinTitleText}>{basinTitle}</Text>
         </View>
@@ -106,7 +133,7 @@ export function MiniMapCard({
       </View>
 
       {/* Bottom Footer Info Pill */}
-      <View style={styles.footerRow}>
+      <View style={styles.footerRow} pointerEvents="none">
         <View style={styles.userLocationPill}>
           <View style={styles.livePulseDot} />
           <Text style={styles.userLocationText}>{userLocationText}</Text>

@@ -42,7 +42,7 @@ export default function MapScreen() {
     t,
   } = useAppStore();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('Namche Ridge Solar Post (+210m)');
   const [isGuidanceActive, setIsGuidanceActive] = useState(false);
 
   const strings = t();
@@ -173,7 +173,6 @@ export default function MapScreen() {
                 placeholderTextColor={Colors.slateFog}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                defaultValue="Namche Ridge Solar Post (+210m)"
               />
             </View>
 
