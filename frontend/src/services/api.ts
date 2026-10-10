@@ -67,7 +67,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     endpoint: string,
     options: RequestInit = {},
     fallbackData: T,
-    timeoutMs = 4000
+    timeoutMs = 10000
   ): Promise<T> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -89,7 +89,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
       return (await res.json()) as T;
     } catch (error) {
-      console.warn(`[API Client] Network fallback on ${endpoint}:`, (error as Error).message);
+      console.log(`[API Client] Offline cache fallback on ${endpoint}:`, (error as Error).message);
       return fallbackData;
     } finally {
       clearTimeout(timeout);
@@ -281,11 +281,15 @@ export function getResolvedApiUrl(): string {
     return envUrl || 'http://localhost:4000';
   }
 
-  // On native mobile (iOS / Android in Expo Go), dynamically resolve computer's LAN IP from Metro host
+  // On native mobile (iOS / Android in Expo Go), dynamically resolve computer's LAN IP or tunnel host
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(':')[0];
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      // If connected via tunnel (e.g. *.ngrok-free.dev or *.exp.direct), route via Metro HTTPS proxy
+      if (host.includes('ngrok') || host.includes('exp.direct')) {
+        return `https://${host}`;
+      }
       return `http://${host}:4000`;
     }
   }
