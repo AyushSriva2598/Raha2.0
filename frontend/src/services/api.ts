@@ -273,22 +273,26 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 // Dynamic API URL resolver: On physical mobile devices, automatically substitutes localhost with the Expo LAN host
 export function getResolvedApiUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
+
   if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.location?.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return `http://${window.location.hostname}:4000`;
+    }
     return envUrl || 'http://localhost:4000';
   }
 
-  // If user explicitly configured an external or LAN IP, use it directly
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    return envUrl;
-  }
-
-  // On native mobile (iOS / Android in Expo Go), resolve computer's LAN IP
+  // On native mobile (iOS / Android in Expo Go), dynamically resolve computer's LAN IP from Metro host
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(':')[0];
-    if (host) {
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
       return `http://${host}:4000`;
     }
+  }
+
+  // If user explicitly configured an external or LAN IP, use it
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
   }
 
   return envUrl || 'http://localhost:4000';
