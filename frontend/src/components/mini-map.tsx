@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import MapView, { Marker, Polygon, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
+import MapView, { Marker, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
 import { Maximize2 } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -60,13 +60,7 @@ export function MiniMapCard({
           zoomEnabled={false}
           rotateEnabled={false}
           pitchEnabled={false}
-          mapType="terrain">
-          <UrlTile
-            urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maximumZ={19}
-            flipY={false}
-            zIndex={-1}
-          />
+          mapType={Platform.OS === 'android' ? 'terrain' : 'standard'}>
 
           {hazardCoords.length > 0 && (
             <Polygon

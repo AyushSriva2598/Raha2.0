@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import MapView, { Marker, Polygon, Polyline, PROVIDER_GOOGLE, UrlTile, type Region } from 'react-native-maps';
+import MapView, { Marker, Polygon, Polyline, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { Colors } from '@/constants/tokens';
 import { SafePoint } from '@/types';
 import {
@@ -84,14 +84,13 @@ export function HazardMapCanvas({
         initialRegion={initialRegion}
         showsCompass={true}
         showsScale={true}
-        mapType="terrain">
-        {/* OpenStreetMap Tile Layer for crisp topography without requiring Google API Keys */}
-        <UrlTile
-          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maximumZ={19}
-          flipY={false}
-          zIndex={-1}
-        />
+        mapType={Platform.OS === 'android' ? 'terrain' : 'standard'}
+        onMapReady={() => {
+          console.log('[HazardMapCanvas] Native Map Ready');
+        }}
+        onMapLoaded={() => {
+          console.log('[HazardMapCanvas] Native Map Tiles Loaded');
+        }}>
 
         {/* 1. GLOF Inundation Hazard Polygon Corridor */}
         {hazardPolygonCoords.length > 0 && (
