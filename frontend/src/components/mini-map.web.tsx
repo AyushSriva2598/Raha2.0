@@ -48,6 +48,7 @@ export function MiniMapCard({
         };
 
         const map = new maps.Map(containerRef.current, {
+          mapId: 'DEMO_MAP_ID',
           center,
           zoom: 12.2,
           mapTypeId: 'terrain',
@@ -78,21 +79,37 @@ export function MiniMapCard({
           });
         }
 
-        // Add User Location Pin
-        new maps.Marker({
-          position: center,
-          map,
-          title: userLocationText,
-          icon: {
-            path: maps.SymbolPath.CIRCLE,
-            scale: 6,
-            fillColor: Colors.meltwater,
-            fillOpacity: 1.0,
-            strokeColor: '#FFFFFF',
-            strokeWeight: 2.5,
-          },
-          zIndex: 10,
-        });
+        // Add User Location Pin using AdvancedMarkerElement
+        if (maps.marker?.AdvancedMarkerElement) {
+          const pin = new maps.marker.PinElement({
+            background: Colors.meltwater,
+            borderColor: '#FFFFFF',
+            glyphColor: '#FFFFFF',
+            scale: 0.7,
+          });
+          new maps.marker.AdvancedMarkerElement({
+            position: center,
+            map,
+            title: userLocationText,
+            content: pin.element,
+            zIndex: 10,
+          });
+        } else {
+          new maps.Marker({
+            position: center,
+            map,
+            title: userLocationText,
+            icon: {
+              path: maps.SymbolPath.CIRCLE,
+              scale: 6,
+              fillColor: Colors.meltwater,
+              fillOpacity: 1.0,
+              strokeColor: '#FFFFFF',
+              strokeWeight: 2.5,
+            },
+            zIndex: 10,
+          });
+        }
       })
       .catch((err) => {
         console.error('[Google Maps Mini] Failed to initialize:', err);

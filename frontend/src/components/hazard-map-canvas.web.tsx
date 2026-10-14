@@ -29,7 +29,7 @@ export function HazardMapCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const markersRef = useRef<(google.maps.Marker | google.maps.marker.AdvancedMarkerElement)[]>([]);
   const modeRef = useRef(mode);
 
   // 1. Initialize Google Maps instance
@@ -46,6 +46,7 @@ export function HazardMapCanvas({
         };
 
         const map = new maps.Map(containerRef.current, {
+          mapId: 'DEMO_MAP_ID',
           center,
           zoom: 14,
           mapTypeId: 'terrain',
@@ -122,7 +123,13 @@ export function HazardMapCanvas({
 
     return () => {
       isCancelled = true;
-      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current.forEach((m) => {
+        if ('setMap' in m && typeof m.setMap === 'function') {
+          m.setMap(null);
+        } else if ('map' in m) {
+          (m as google.maps.marker.AdvancedMarkerElement).map = null;
+        }
+      });
       markersRef.current = [];
       if (polygonRef.current) {
         polygonRef.current.setMap(null);
@@ -146,7 +153,13 @@ export function HazardMapCanvas({
     if (!map || typeof window === 'undefined' || !window.google?.maps) return;
 
     // Clear previous markers
-    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current.forEach((m) => {
+      if ('setMap' in m && typeof m.setMap === 'function') {
+        m.setMap(null);
+      } else if ('map' in m) {
+        (m as google.maps.marker.AdvancedMarkerElement).map = null;
+      }
+    });
     markersRef.current = [];
 
     const maps = window.google.maps;
@@ -162,60 +175,107 @@ export function HazardMapCanvas({
         ? 'You • Dingboche (4,410m)'
         : 'Meena • Dingboche (4,410m)';
 
-    const userMarker = new maps.Marker({
-      position: userPos,
-      map,
-      title: userLabel,
-      icon: {
-        path: maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: Colors.meltwater,
-        fillOpacity: 1.0,
-        strokeColor: '#FFFFFF',
-        strokeWeight: 3,
-      },
-      zIndex: 10,
-    });
-
-    markersRef.current.push(userMarker);
+    if (maps.marker?.AdvancedMarkerElement) {
+      const pin = new maps.marker.PinElement({
+        background: Colors.meltwater,
+        borderColor: '#FFFFFF',
+        glyphColor: '#FFFFFF',
+        scale: 0.9,
+      });
+      const userMarker = new maps.marker.AdvancedMarkerElement({
+        position: userPos,
+        map,
+        title: userLabel,
+        content: pin.element,
+        zIndex: 10,
+      });
+      markersRef.current.push(userMarker);
+    } else {
+      const userMarker = new maps.Marker({
+        position: userPos,
+        map,
+        title: userLabel,
+        icon: {
+          path: maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: Colors.meltwater,
+          fillOpacity: 1.0,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3,
+        },
+        zIndex: 10,
+      });
+      markersRef.current.push(userMarker);
+    }
 
     // B. Safe Points Markers
     safePoints.forEach((sp) => {
       const isSelected = selectedSafePoint?.pointId === sp.pointId;
-      const spMarker = new maps.Marker({
-        position: {
-          lat: sp.coordinates.latitude,
-          lng: sp.coordinates.longitude,
-        },
-        map,
-        title: `${sp.name} (+${sp.elevationGainM}m)`,
-        label: {
-          text: '▲',
-          color: '#FFFFFF',
-          fontSize: '11px',
-          fontWeight: 'bold',
-        },
-        icon: {
-          path: maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: isSelected ? 6.5 : 5.5,
-          fillColor: isSelected ? Colors.cirqueTeal : '#0F6CBD',
-          fillOpacity: 1.0,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-        },
-        zIndex: isSelected ? 20 : 10,
-      });
 
-      spMarker.addListener('click', () => {
-        onSelectSafePoint(sp);
-        map.panTo({
-          lat: sp.coordinates.latitude,
-          lng: sp.coordinates.longitude,
+      if (maps.marker?.AdvancedMarkerElement) {
+        const pin = new maps.marker.PinElement({
+          background: isSelected ? Colors.cirqueTeal : '#0F6CBD',
+          borderColor: '#FFFFFF',
+          glyphColor: '#FFFFFF',
+          scale: isSelected ? 1.15 : 0.9,
         });
-        map.setZoom(15);
-      });
+        const spMarker = new maps.marker.AdvancedMarkerElement({
+          position: {
+            lat: sp.coordinates.latitude,
+            lng: sp.coordinates.longitude,
+          },
+          map,
+          title: `${sp.name} (+${sp.elevationGainM}m)`,
+          content: pin.element,
+          zIndex: isSelected ? 20 : 10,
+        });
 
-      markersRef.current.push(spMarker);
+        spMarker.addListener('click', () => {
+          onSelectSafePoint(sp);
+          map.panTo({
+            lat: sp.coordinates.latitude,
+            lng: sp.coordinates.longitude,
+          });
+          map.setZoom(15);
+        });
+
+        markersRef.current.push(spMarker);
+      } else {
+        const spMarker = new maps.Marker({
+          position: {
+            lat: sp.coordinates.latitude,
+            lng: sp.coordinates.longitude,
+          },
+          map,
+          title: `${sp.name} (+${sp.elevationGainM}m)`,
+          label: {
+            text: '▲',
+            color: '#FFFFFF',
+            fontSize: '11px',
+            fontWeight: 'bold',
+          },
+          icon: {
+            path: maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+            scale: isSelected ? 6.5 : 5.5,
+            fillColor: isSelected ? Colors.cirqueTeal : '#0F6CBD',
+            fillOpacity: 1.0,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+          },
+          zIndex: isSelected ? 20 : 10,
+        });
+
+        spMarker.addListener('click', () => {
+          onSelectSafePoint(sp);
+          map.panTo({
+            lat: sp.coordinates.latitude,
+            lng: sp.coordinates.longitude,
+          });
+          map.setZoom(15);
+        });
+
+        markersRef.current.push(spMarker);
+      }
     });
   }, [safePoints, selectedSafePoint, targetPerson, onSelectSafePoint]);
 
