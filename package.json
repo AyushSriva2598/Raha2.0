@@ -8,6 +8,8 @@
     "backend"
   ],
   "scripts": {
+    "start": "cd frontend && node ./scripts/start.js",
+    "start:tunnel": "cd frontend && node ./scripts/start.js --start-tunnel",
     "start:frontend": "npm --prefix frontend start",
     "start:frontend:tunnel": "cd frontend && bun start --start-tunnel",
     "start:backend": "npm --prefix backend run dev",
