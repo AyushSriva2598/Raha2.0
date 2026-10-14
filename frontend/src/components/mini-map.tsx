@@ -60,7 +60,7 @@ export function MiniMapCard({
           zoomEnabled={false}
           rotateEnabled={false}
           pitchEnabled={false}
-          mapType={Platform.OS === 'android' ? 'terrain' : 'standard'}>
+          mapType="standard">
 
           {hazardCoords.length > 0 && (
             <Polygon
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(205, 219, 228, 0.8)',
     position: 'relative',
-    backgroundColor: '#0F1A24',
+    backgroundColor: '#E8ECEF',
     justifyContent: 'space-between',
     padding: Spacing.sm,
     ...Shadows.subtle,

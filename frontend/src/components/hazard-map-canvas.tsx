@@ -84,7 +84,7 @@ export function HazardMapCanvas({
         initialRegion={initialRegion}
         showsCompass={true}
         showsScale={true}
-        mapType={Platform.OS === 'android' ? 'terrain' : 'standard'}
+        mapType="standard"
         onMapReady={() => {
           console.log('[HazardMapCanvas] Native Map Ready');
         }}
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     height: 480,
     width: '100%',
     position: 'relative',
-    backgroundColor: '#0F1A24',
+    backgroundColor: '#E8ECEF',
     overflow: 'hidden',
   },
   userMarkerContainer: {
