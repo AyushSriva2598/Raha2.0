@@ -49,8 +49,6 @@ export function HazardMapCanvas({
           center,
           zoom: 14,
           mapTypeId: 'terrain',
-          heading: 15,
-          tilt: 45,
           streetViewControl: false,
           fullscreenControl: false,
           mapTypeControl: true,
