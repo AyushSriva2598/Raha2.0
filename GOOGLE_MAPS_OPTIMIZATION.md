@@ -9,8 +9,8 @@ This document details the three Google Maps JavaScript API web console warnings 
 | # | Warning Message | Affected File(s) | Solution Summary | Local Commit Hash |
 |---|-----------------|------------------|------------------|-------------------|
 | **1** | `Google Maps JavaScript API has been loaded directly without loading=async...` | [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) | Implemented Google's recommended async loader pattern with `loading=async`, dynamic callback, and library pre-import. | `afeba2e` |
-| **2** | `As of Maps JavaScript API version 3.65, 45° imagery on raster maps in satellite and hybrid map types is no longer available...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx) | Removed deprecated `tilt: 45` and `heading: 15` from raster map configuration. | `e3a357f` |
-| **3** | `As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx) | Configured `mapId: 'DEMO_MAP_ID'`, migrated to `google.maps.marker.AdvancedMarkerElement` and `PinElement`, and updated removal lifecycle. | `aba7d29` |
+| **2** | `As of Maps JavaScript API version 3.65, 45° imagery on raster maps in satellite and hybrid map types is no longer available...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx) | Explicitly set `tilt: 0` and called `map.setTilt(0)` to prevent raster satellite 45° imagery requests. | `e3a357f`, `70bfc7c` |
+| **3** | `As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx), [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) | Configured `mapId: 'DEMO_MAP_ID'`, explicitly attached `markerLib` to `google.maps.marker`, and completely purged legacy `new maps.Marker` in favor of pure `AdvancedMarkerElement` and DOM pins. | `aba7d29`, `70bfc7c` |
 
 ---
 
@@ -53,13 +53,17 @@ In [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/co
 heading: 15,
 tilt: 45,
 ```
-As of Google Maps API v3.65, Google discontinued 45° aerial raster imagery for standard raster satellite and hybrid map types. Specifying `tilt: 45` on raster maps triggers this deprecation warning because raster tiles cannot satisfy the 45° perspective.
+As of Google Maps API v3.65, Google discontinued 45° aerial raster imagery for standard raster satellite and hybrid map types. Specifying `tilt: 45` or leaving tilt unspecified when satellite map types are available can trigger this deprecation warning because raster tiles cannot satisfy the 45° perspective.
 
 ### Solution Opted
-Removed `heading: 15` and `tilt: 45` from the `maps.Map` constructor configuration in [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), keeping the camera cleanly oriented for topographic terrain and satellite views without triggering raster tile deprecations.
+1. Removed `heading: 15` and `tilt: 45` from the map constructor options.
+2. Explicitly configured `tilt: 0` in both [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx) and [`mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx).
+3. Invoked `map.setTilt(0)` and bound a listener on `maptypeid_changed` to ensure 45° imagery is never requested by default on raster tiles.
 
-**File Updated**: [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx)  
-**Commit**: `e3a357f` (`fix(maps): remove deprecated 45 degree tilt on raster maps`)
+**Files Updated**:  
+- [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx)  
+- [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx)  
+**Commits**: `e3a357f`, `70bfc7c`
 
 ---
 
@@ -74,38 +78,29 @@ Web  WARN  As of February 21st, 2024, google.maps.Marker is deprecated. Please u
 ### Technical Root Cause
 Google officially deprecated the legacy `google.maps.Marker` class in February 2024 in favor of DOM-based `google.maps.marker.AdvancedMarkerElement`. The legacy markers rely on raster/SVG symbol paths and Canvas overlays rather than high-performance HTML/CSS elements.
 
-Furthermore, `AdvancedMarkerElement` strictly requires that the hosting `google.maps.Map` be created with a `mapId`. Initializing an `AdvancedMarkerElement` without a `mapId` throws an error.
+In early migration attempts, an `else { new maps.Marker(...) }` fallback was retained. When `google.maps.importLibrary('marker')` ran asynchronously, `google.maps.marker` was not yet synchronously bound on the global `maps` namespace when the component mounted, causing the component to execute the fallback and call `new maps.Marker()`.
 
 ### Solution Opted
-1. **Configured `mapId`**: Added `mapId: 'DEMO_MAP_ID'` to the map options in both [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx) and [`mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx).
-2. **Migrated to `AdvancedMarkerElement` & `PinElement`**:
-   - Replaced legacy `new maps.Marker({ ... icon: { path: maps.SymbolPath.CIRCLE } })` with `new maps.marker.AdvancedMarkerElement` paired with a customized `new maps.marker.PinElement`.
-   - Used theme tokens for background colors (`Colors.meltwater` for user location pin, `Colors.cirqueTeal` and `#0F6CBD` for safe assembly points).
-   - Preserved fallback to legacy `google.maps.Marker` for any older browser contexts where `maps.marker?.AdvancedMarkerElement` might not be initialized.
-3. **Updated Marker Cleanup Lifecycle**:
-   - Legacy markers are removed via `marker.setMap(null)`.
-   - Advanced markers are removed via `marker.map = null`.
-   - Updated cleanup loops and unmount handlers with type-safe guards:
-     ```typescript
-     markersRef.current.forEach((m) => {
-       if ('setMap' in m && typeof m.setMap === 'function') {
-         m.setMap(null);
-       } else if ('map' in m) {
-         (m as google.maps.marker.AdvancedMarkerElement).map = null;
-       }
-     });
-     ```
+1. **Namespace Guarantee**: Updated [`loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) to explicitly attach the imported `markerLib` exports to `google.maps.marker` before resolving the promise.
+2. **Configured `mapId`**: Added `mapId: 'DEMO_MAP_ID'` to map options (required by `AdvancedMarkerElement`).
+3. **Pure DOM / AdvancedMarker Migration**:
+   - Completely deleted all references to `new maps.Marker(...)` across the entire codebase.
+   - If `PinElement` is available, it constructs a native Google Maps pin; if not, it gracefully creates a high-performance HTML `div` pin with custom colors (`Colors.meltwater`, `Colors.cirqueTeal`).
+4. **Updated Lifecycle Cleanup**:
+   - Updated all marker cleanup routines to `marker.map = null` (the standard for `AdvancedMarkerElement`).
 
 **Files Updated**:  
 - [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx)  
 - [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx)  
-**Commit**: `aba7d29` (`fix(maps): migrate from deprecated google.maps.Marker to AdvancedMarkerElement`)
+- [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts)  
+**Commits**: `aba7d29`, `70bfc7c`
 
 ---
 
 ## 4. Verification
 
-After applying each change, the codebase was verified:
+After applying these fixes:
+- `grep -rn "new maps\.Marker" frontend/src` -> **0 occurrences**
 - `npm run typecheck:frontend` -> **0 errors**
 - `npm run lint:frontend` -> **0 errors, 0 warnings**
 - `npm run typecheck:backend` -> **0 errors**
