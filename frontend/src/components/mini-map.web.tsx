@@ -53,12 +53,14 @@ export function MiniMapCard({
           zoom: 12.2,
           mapTypeId: 'terrain',
           tilt: 0,
+          heading: 0,
           disableDefaultUI: true,
           gestureHandling: 'none',
           keyboardShortcuts: false,
         });
 
         map.setTilt(0);
+        map.setHeading(0);
         mapRef.current = map;
 
         // Add Hazard Polygon

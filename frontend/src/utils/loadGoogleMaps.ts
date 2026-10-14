@@ -6,6 +6,23 @@ declare global {
   }
 }
 
+// Proactively filter known Google Maps deprecation warnings from polluting console output
+if (typeof window !== 'undefined' && !(window as any).__gmaps_warn_patched) {
+  (window as any).__gmaps_warn_patched = true;
+  const originalWarn = console.warn;
+  console.warn = function (...args: any[]) {
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    if (
+      msg.includes('google.maps.Marker is deprecated') ||
+      msg.includes('45° imagery on raster maps') ||
+      msg.includes('google.maps.places')
+    ) {
+      return;
+    }
+    return originalWarn.apply(console, args);
+  };
+}
+
 // Utility to dynamically load Google Maps JavaScript API SDK on Web
 let googleMapsPromise: Promise<typeof google.maps> | null = null;
 
@@ -85,7 +102,7 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
 
     const script = document.createElement('script');
     // Using loading=async and callback per Google Maps JavaScript API best-practice guidelines
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async&libraries=geometry,places,marker&callback=${callbackName}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async&libraries=geometry,marker&callback=${callbackName}`;
     script.async = true;
     script.defer = true;
 

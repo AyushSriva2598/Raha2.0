@@ -51,6 +51,7 @@ export function HazardMapCanvas({
           zoom: 14,
           mapTypeId: 'terrain',
           tilt: 0,
+          heading: 0,
           streetViewControl: false,
           fullscreenControl: false,
           mapTypeControl: true,
@@ -67,8 +68,10 @@ export function HazardMapCanvas({
 
         // Ensure 45 degree imagery is explicitly disabled on raster tiles
         map.setTilt(0);
+        map.setHeading(0);
         map.addListener('maptypeid_changed', () => {
           map.setTilt(0);
+          map.setHeading(0);
         });
 
         mapRef.current = map;

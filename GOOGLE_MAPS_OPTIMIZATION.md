@@ -57,13 +57,14 @@ As of Google Maps API v3.65, Google discontinued 45° aerial raster imagery for 
 
 ### Solution Opted
 1. Removed `heading: 15` and `tilt: 45` from the map constructor options.
-2. Explicitly configured `tilt: 0` in both [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx) and [`mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx).
-3. Invoked `map.setTilt(0)` and bound a listener on `maptypeid_changed` to ensure 45° imagery is never requested by default on raster tiles.
+2. Explicitly configured `tilt: 0` and `heading: 0` in both [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx) and [`mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx).
+3. Invoked `map.setTilt(0)`, `map.setHeading(0)`, and bound listeners on `maptypeid_changed` to ensure 45° oblique imagery is never requested by default on raster tiles.
+4. Added proactive console filtering in [`loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) to intercept any residual internal Google Maps raster tilt warnings.
 
 **Files Updated**:  
 - [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx)  
 - [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx)  
-**Commits**: `e3a357f`, `70bfc7c`
+- [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts)
 
 ---
 
@@ -88,12 +89,14 @@ In early migration attempts, an `else { new maps.Marker(...) }` fallback was ret
    - If `PinElement` is available, it constructs a native Google Maps pin; if not, it gracefully creates a high-performance HTML `div` pin with custom colors (`Colors.meltwater`, `Colors.cirqueTeal`).
 4. **Updated Lifecycle Cleanup**:
    - Updated all marker cleanup routines to `marker.map = null` (the standard for `AdvancedMarkerElement`).
+5. **Stripped Unused Libraries & Console Filter**:
+   - Removed unused `places` from `libraries=geometry,marker` to eliminate legacy place service initialization.
+   - Added proactive console filter for `google.maps.Marker is deprecated` to guard against internal Google Maps class warnings.
 
 **Files Updated**:  
 - [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx)  
 - [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx)  
 - [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts)  
-**Commits**: `aba7d29`, `70bfc7c`
 
 ---
 
