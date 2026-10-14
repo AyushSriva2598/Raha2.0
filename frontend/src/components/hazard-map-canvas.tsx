@@ -24,6 +24,14 @@ export function HazardMapCanvas({
   onSelectSafePoint,
   safePoints,
 }: HazardMapCanvasProps) {
+  console.log('🌍 [HELLO WORLD] HazardMapCanvas (Mobile Native) is RENDERING!', {
+    platform: Platform.OS,
+    mode,
+    targetPerson,
+    safePointsCount: safePoints.length,
+    dingbocheCoords: DINGBOCHE_COORDINATES,
+  });
+
   const mapRef = useRef<MapView>(null);
 
   // Convert GeoJSON Polygon [lng, lat] to react-native-maps { latitude, longitude }
@@ -85,11 +93,17 @@ export function HazardMapCanvas({
         showsCompass={true}
         showsScale={true}
         mapType="standard"
+        loadingEnabled={true}
+        loadingBackgroundColor="#E8ECEF"
+        loadingIndicatorColor={Colors.cirqueTeal}
         onMapReady={() => {
-          console.log('[HazardMapCanvas] Native Map Ready');
+          console.log('🌍 [HELLO WORLD] HazardMapCanvas MapView ON_MAP_READY fired! (Native map surface mounted)');
         }}
         onMapLoaded={() => {
-          console.log('[HazardMapCanvas] Native Map Tiles Loaded');
+          console.log('🌍 [HELLO WORLD] HazardMapCanvas MapView ON_MAP_LOADED fired! (All map tiles downloaded)');
+        }}
+        onRegionChangeComplete={(region) => {
+          console.log('🌍 [HELLO WORLD] HazardMapCanvas Region changed:', region);
         }}>
 
         {/* 1. GLOF Inundation Hazard Polygon Corridor */}

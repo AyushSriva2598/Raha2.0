@@ -26,6 +26,7 @@ import {
 } from 'lucide-react-native';
 
 export default function MapScreen() {
+  console.log('📱 [HELLO WORLD] MapScreen Route is RENDERING!', { platform: Platform.OS });
   const insets = useSafeAreaInsets();
   const {
     mapMode,
