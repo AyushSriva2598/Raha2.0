@@ -8,12 +8,14 @@
     "scheme": "raha",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.raha.hazardapp",
       "icon": "./assets/expo.icon",
       "config": {
         "googleMapsApiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
       }
     },
     "android": {
+      "package": "com.raha.hazardapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import MapView, { Marker, Polygon, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
 import { Maximize2 } from 'lucide-react-native';
@@ -49,7 +49,7 @@ export function MiniMapCard({
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <MapView
           style={StyleSheet.absoluteFill}
-          provider={PROVIDER_GOOGLE}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
           initialRegion={{
             latitude: DINGBOCHE_COORDINATES[1],
             longitude: DINGBOCHE_COORDINATES[0],

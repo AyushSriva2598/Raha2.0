@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import MapView, { Marker, Polygon, Polyline, PROVIDER_GOOGLE, UrlTile, type Region } from 'react-native-maps';
 import { Colors } from '@/constants/tokens';
 import { SafePoint } from '@/types';
@@ -80,7 +80,7 @@ export function HazardMapCanvas({
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_GOOGLE}
+        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={initialRegion}
         showsCompass={true}
         showsScale={true}
