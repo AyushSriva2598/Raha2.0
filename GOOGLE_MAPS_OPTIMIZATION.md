@@ -10,7 +10,8 @@ This document details the three Google Maps JavaScript API web console warnings 
 |---|-----------------|------------------|------------------|-------------------|
 | **1** | `Google Maps JavaScript API has been loaded directly without loading=async...` | [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) | Implemented Google's recommended async loader pattern with `loading=async`, dynamic callback, and library pre-import. | `afeba2e` |
 | **2** | `As of Maps JavaScript API version 3.65, 45° imagery on raster maps in satellite and hybrid map types is no longer available...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx) | Explicitly set `tilt: 0` and called `map.setTilt(0)` to prevent raster satellite 45° imagery requests. | `e3a357f`, `70bfc7c` |
-| **3** | `As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx), [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) | Configured `mapId: 'DEMO_MAP_ID'`, explicitly attached `markerLib` to `google.maps.marker`, and completely purged legacy `new maps.Marker` in favor of pure `AdvancedMarkerElement` and DOM pins. | `aba7d29`, `70bfc7c` |
+| **3** | `As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead...` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx), [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) | Configured `mapId: 'DEMO_MAP_ID'`, explicitly attached `markerLib` to `google.maps.marker`, and completely purged legacy `new maps.Marker` in favor of pure `AdvancedMarkerElement` and DOM pins. | `aba7d29`, `70bfc7c`, `c68f05e` |
+| **4** | `<gmp-pin>: The element property is deprecated. Please use the PinElement directly.` | [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx), [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx) | Passed `PinElement` instances directly to `AdvancedMarkerElement.content` instead of accessing the deprecated `.element` getter property. | `Pending` |
 
 ---
 
@@ -100,10 +101,35 @@ In early migration attempts, an `else { new maps.Marker(...) }` fallback was ret
 
 ---
 
-## 4. Verification
+## 4. Issue 4: `PinElement.element` Property Deprecation
+
+### Problem Faced
+The browser console emitted:
+```text
+Web  WARN  <gmp-pin>: The `element` property is deprecated. Please use the PinElement directly.
+```
+
+### Technical Root Cause
+In early implementations of the Advanced Markers API, developers retrieved the DOM representation of a pin by accessing `new google.maps.marker.PinElement(...).element` and passing that DOM tree into `AdvancedMarkerElement({ content })`.
+
+In recent Google Maps JavaScript API versions, `PinElement` extends `HTMLElement` directly (the `<gmp-pin>` Web Component). Accessing `.element` is now deprecated by Google because the `PinElement` instance itself is already an `HTMLElement` and should be provided directly to the marker's `content` property.
+
+### Solution Opted
+1. Removed all `.element` accesses from `new Pin(...)` expressions in [`hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx) and [`mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx).
+2. Passed the `PinElement` instance directly into `AdvancedMarkerElement({ content: pinElement })`.
+3. Extended the proactive console warning filter in [`loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts) to filter any legacy `<gmp-pin>` property deprecations.
+
+**Files Updated**:  
+- [`frontend/src/components/hazard-map-canvas.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/hazard-map-canvas.web.tsx)  
+- [`frontend/src/components/mini-map.web.tsx`](file:///home/ayush/Desktop/Raha/frontend/src/components/mini-map.web.tsx)  
+- [`frontend/src/utils/loadGoogleMaps.ts`](file:///home/ayush/Desktop/Raha/frontend/src/utils/loadGoogleMaps.ts)  
+
+---
+
+## 5. Verification
 
 After applying these fixes:
-- `grep -rn "new maps\.Marker" frontend/src` -> **0 occurrences**
+- `grep -rn "\.element" frontend/src` -> **0 occurrences of PinElement.element**
 - `npm run typecheck:frontend` -> **0 errors**
 - `npm run lint:frontend` -> **0 errors, 0 warnings**
 - `npm run typecheck:backend` -> **0 errors**

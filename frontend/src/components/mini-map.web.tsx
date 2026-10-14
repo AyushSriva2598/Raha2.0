@@ -93,12 +93,12 @@ export function MiniMapCard({
 
         if (AdvancedMarker) {
           const pinElement = Pin
-            ? new Pin({
+            ? (new Pin({
                 background: Colors.meltwater,
                 borderColor: '#FFFFFF',
                 glyphColor: '#FFFFFF',
                 scale: 0.7,
-              }).element
+              }) as unknown as HTMLElement)
             : (() => {
                 const el = document.createElement('div');
                 el.style.width = '14px';

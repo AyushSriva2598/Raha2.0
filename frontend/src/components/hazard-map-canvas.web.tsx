@@ -185,12 +185,12 @@ export function HazardMapCanvas({
 
     if (AdvancedMarker) {
       const pinElement = Pin
-        ? new Pin({
+        ? (new Pin({
             background: Colors.meltwater,
             borderColor: '#FFFFFF',
             glyphColor: '#FFFFFF',
             scale: 0.9,
-          }).element
+          }) as unknown as HTMLElement)
         : (() => {
             const el = document.createElement('div');
             el.style.width = '18px';
@@ -218,12 +218,12 @@ export function HazardMapCanvas({
 
       if (AdvancedMarker) {
         const pinElement = Pin
-          ? new Pin({
+          ? (new Pin({
               background: isSelected ? Colors.cirqueTeal : '#0F6CBD',
               borderColor: '#FFFFFF',
               glyphColor: '#FFFFFF',
               scale: isSelected ? 1.15 : 0.9,
-            }).element
+            }) as unknown as HTMLElement)
           : (() => {
               const el = document.createElement('div');
               el.style.padding = '4px 8px';

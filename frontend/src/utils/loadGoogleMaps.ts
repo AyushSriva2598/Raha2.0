@@ -15,6 +15,8 @@ if (typeof window !== 'undefined' && !(window as any).__gmaps_warn_patched) {
     if (
       msg.includes('google.maps.Marker is deprecated') ||
       msg.includes('45° imagery on raster maps') ||
+      msg.includes('element` property is deprecated') ||
+      msg.includes('<gmp-pin>') ||
       msg.includes('google.maps.places')
     ) {
       return;
