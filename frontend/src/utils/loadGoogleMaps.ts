@@ -18,7 +18,7 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
     return Promise.reject(new Error('Google Maps can only be loaded in a browser environment'));
   }
 
-  if (window.google?.maps) {
+  if (window.google?.maps?.Map) {
     return Promise.resolve(window.google.maps);
   }
 
@@ -27,14 +27,41 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
   }
 
   googleMapsPromise = new Promise((resolve, reject) => {
+    // If maps is already fully loaded
+    if (window.google?.maps?.Map) {
+      resolve(window.google.maps);
+      return;
+    }
+
+    const callbackName = '__gmaps_async_cb_' + Math.random().toString(36).substring(2, 9);
+
+    // Global callback triggered by Google Maps script
+    (window as any)[callbackName] = async () => {
+      try {
+        delete (window as any)[callbackName];
+        if (window.google?.maps) {
+          if (typeof window.google.maps.importLibrary === 'function') {
+            await Promise.all([
+              window.google.maps.importLibrary('maps'),
+              window.google.maps.importLibrary('marker'),
+              window.google.maps.importLibrary('geometry'),
+            ]);
+          }
+          resolve(window.google.maps);
+        } else {
+          reject(new Error('Google Maps script loaded but window.google.maps is undefined'));
+        }
+      } catch (err) {
+        reject(err instanceof Error ? err : new Error(String(err)));
+      }
+    };
+
     // Check if script tag already exists
     const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
     if (existingScript) {
       existingScript.addEventListener('load', () => {
-        if (window.google?.maps) {
+        if (window.google?.maps?.Map) {
           resolve(window.google.maps);
-        } else {
-          reject(new Error('Google Maps script loaded but window.google.maps is undefined'));
         }
       });
       existingScript.addEventListener('error', (err) => reject(err));
@@ -42,19 +69,13 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry,places`;
+    // Using loading=async and callback per Google Maps JavaScript API best-practice guidelines
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async&libraries=geometry,places,marker&callback=${callbackName}`;
     script.async = true;
     script.defer = true;
 
-    script.onload = () => {
-      if (window.google?.maps) {
-        resolve(window.google.maps);
-      } else {
-        reject(new Error('Google Maps failed to initialize after script load'));
-      }
-    };
-
     script.onerror = (err) => {
+      delete (window as any)[callbackName];
       reject(new Error(`Failed to load Google Maps script: ${err}`));
     };
 
