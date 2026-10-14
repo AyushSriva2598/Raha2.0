@@ -18,7 +18,7 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
     return Promise.reject(new Error('Google Maps can only be loaded in a browser environment'));
   }
 
-  if (window.google?.maps?.Map) {
+  if (window.google?.maps?.Map && (window.google.maps as any).marker?.AdvancedMarkerElement) {
     return Promise.resolve(window.google.maps);
   }
 
@@ -27,8 +27,8 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
   }
 
   googleMapsPromise = new Promise((resolve, reject) => {
-    // If maps is already fully loaded
-    if (window.google?.maps?.Map) {
+    // If maps is already fully loaded with marker library
+    if (window.google?.maps?.Map && (window.google.maps as any).marker?.AdvancedMarkerElement) {
       resolve(window.google.maps);
       return;
     }
@@ -41,11 +41,17 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
         delete (window as any)[callbackName];
         if (window.google?.maps) {
           if (typeof window.google.maps.importLibrary === 'function') {
-            await Promise.all([
+            const [, markerLib] = await Promise.all([
               window.google.maps.importLibrary('maps'),
               window.google.maps.importLibrary('marker'),
               window.google.maps.importLibrary('geometry'),
             ]);
+            if (markerLib) {
+              (window.google.maps as any).marker = {
+                ...((window.google.maps as any).marker || {}),
+                ...markerLib,
+              };
+            }
           }
           resolve(window.google.maps);
         } else {
@@ -59,8 +65,17 @@ export function loadGoogleMaps(): Promise<typeof google.maps> {
     // Check if script tag already exists
     const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
     if (existingScript) {
-      existingScript.addEventListener('load', () => {
-        if (window.google?.maps?.Map) {
+      existingScript.addEventListener('load', async () => {
+        if (window.google?.maps) {
+          if (typeof window.google.maps.importLibrary === 'function') {
+            const markerLib = await window.google.maps.importLibrary('marker');
+            if (markerLib) {
+              (window.google.maps as any).marker = {
+                ...((window.google.maps as any).marker || {}),
+                ...markerLib,
+              };
+            }
+          }
           resolve(window.google.maps);
         }
       });

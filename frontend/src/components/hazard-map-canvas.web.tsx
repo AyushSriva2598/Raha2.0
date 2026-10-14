@@ -29,7 +29,7 @@ export function HazardMapCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
-  const markersRef = useRef<(google.maps.Marker | google.maps.marker.AdvancedMarkerElement)[]>([]);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const modeRef = useRef(mode);
 
   // 1. Initialize Google Maps instance
@@ -50,6 +50,7 @@ export function HazardMapCanvas({
           center,
           zoom: 14,
           mapTypeId: 'terrain',
+          tilt: 0,
           streetViewControl: false,
           fullscreenControl: false,
           mapTypeControl: true,
@@ -62,6 +63,12 @@ export function HazardMapCanvas({
           zoomControlOptions: {
             position: maps.ControlPosition.RIGHT_BOTTOM,
           },
+        });
+
+        // Ensure 45 degree imagery is explicitly disabled on raster tiles
+        map.setTilt(0);
+        map.addListener('maptypeid_changed', () => {
+          map.setTilt(0);
         });
 
         mapRef.current = map;
@@ -124,11 +131,7 @@ export function HazardMapCanvas({
     return () => {
       isCancelled = true;
       markersRef.current.forEach((m) => {
-        if ('setMap' in m && typeof m.setMap === 'function') {
-          m.setMap(null);
-        } else if ('map' in m) {
-          (m as google.maps.marker.AdvancedMarkerElement).map = null;
-        }
+        m.map = null;
       });
       markersRef.current = [];
       if (polygonRef.current) {
@@ -154,15 +157,17 @@ export function HazardMapCanvas({
 
     // Clear previous markers
     markersRef.current.forEach((m) => {
-      if ('setMap' in m && typeof m.setMap === 'function') {
-        m.setMap(null);
-      } else if ('map' in m) {
-        (m as google.maps.marker.AdvancedMarkerElement).map = null;
-      }
+      m.map = null;
     });
     markersRef.current = [];
 
     const maps = window.google.maps;
+    const AdvancedMarker =
+      maps.marker?.AdvancedMarkerElement ||
+      (window.google?.maps as any)?.marker?.AdvancedMarkerElement;
+    const Pin =
+      maps.marker?.PinElement ||
+      (window.google?.maps as any)?.marker?.PinElement;
 
     // A. User Location Pin
     const userPos = {
@@ -175,34 +180,30 @@ export function HazardMapCanvas({
         ? 'You • Dingboche (4,410m)'
         : 'Meena • Dingboche (4,410m)';
 
-    if (maps.marker?.AdvancedMarkerElement) {
-      const pin = new maps.marker.PinElement({
-        background: Colors.meltwater,
-        borderColor: '#FFFFFF',
-        glyphColor: '#FFFFFF',
-        scale: 0.9,
-      });
-      const userMarker = new maps.marker.AdvancedMarkerElement({
+    if (AdvancedMarker) {
+      const pinElement = Pin
+        ? new Pin({
+            background: Colors.meltwater,
+            borderColor: '#FFFFFF',
+            glyphColor: '#FFFFFF',
+            scale: 0.9,
+          }).element
+        : (() => {
+            const el = document.createElement('div');
+            el.style.width = '18px';
+            el.style.height = '18px';
+            el.style.borderRadius = '50%';
+            el.style.backgroundColor = Colors.meltwater;
+            el.style.border = '3px solid #FFFFFF';
+            el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)';
+            return el;
+          })();
+
+      const userMarker = new AdvancedMarker({
         position: userPos,
         map,
         title: userLabel,
-        content: pin.element,
-        zIndex: 10,
-      });
-      markersRef.current.push(userMarker);
-    } else {
-      const userMarker = new maps.Marker({
-        position: userPos,
-        map,
-        title: userLabel,
-        icon: {
-          path: maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: Colors.meltwater,
-          fillOpacity: 1.0,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 3,
-        },
+        content: pinElement,
         zIndex: 10,
       });
       markersRef.current.push(userMarker);
@@ -212,56 +213,36 @@ export function HazardMapCanvas({
     safePoints.forEach((sp) => {
       const isSelected = selectedSafePoint?.pointId === sp.pointId;
 
-      if (maps.marker?.AdvancedMarkerElement) {
-        const pin = new maps.marker.PinElement({
-          background: isSelected ? Colors.cirqueTeal : '#0F6CBD',
-          borderColor: '#FFFFFF',
-          glyphColor: '#FFFFFF',
-          scale: isSelected ? 1.15 : 0.9,
-        });
-        const spMarker = new maps.marker.AdvancedMarkerElement({
+      if (AdvancedMarker) {
+        const pinElement = Pin
+          ? new Pin({
+              background: isSelected ? Colors.cirqueTeal : '#0F6CBD',
+              borderColor: '#FFFFFF',
+              glyphColor: '#FFFFFF',
+              scale: isSelected ? 1.15 : 0.9,
+            }).element
+          : (() => {
+              const el = document.createElement('div');
+              el.style.padding = '4px 8px';
+              el.style.borderRadius = '12px';
+              el.style.backgroundColor = isSelected ? Colors.cirqueTeal : '#0F6CBD';
+              el.style.color = '#FFFFFF';
+              el.style.fontSize = '12px';
+              el.style.fontWeight = 'bold';
+              el.style.border = '2px solid #FFFFFF';
+              el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.35)';
+              el.textContent = '▲ ' + sp.name;
+              return el;
+            })();
+
+        const spMarker = new AdvancedMarker({
           position: {
             lat: sp.coordinates.latitude,
             lng: sp.coordinates.longitude,
           },
           map,
           title: `${sp.name} (+${sp.elevationGainM}m)`,
-          content: pin.element,
-          zIndex: isSelected ? 20 : 10,
-        });
-
-        spMarker.addListener('click', () => {
-          onSelectSafePoint(sp);
-          map.panTo({
-            lat: sp.coordinates.latitude,
-            lng: sp.coordinates.longitude,
-          });
-          map.setZoom(15);
-        });
-
-        markersRef.current.push(spMarker);
-      } else {
-        const spMarker = new maps.Marker({
-          position: {
-            lat: sp.coordinates.latitude,
-            lng: sp.coordinates.longitude,
-          },
-          map,
-          title: `${sp.name} (+${sp.elevationGainM}m)`,
-          label: {
-            text: '▲',
-            color: '#FFFFFF',
-            fontSize: '11px',
-            fontWeight: 'bold',
-          },
-          icon: {
-            path: maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-            scale: isSelected ? 6.5 : 5.5,
-            fillColor: isSelected ? Colors.cirqueTeal : '#0F6CBD',
-            fillOpacity: 1.0,
-            strokeColor: '#FFFFFF',
-            strokeWeight: 2,
-          },
+          content: pinElement,
           zIndex: isSelected ? 20 : 10,
         });
 

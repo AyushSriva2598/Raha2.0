@@ -52,11 +52,13 @@ export function MiniMapCard({
           center,
           zoom: 12.2,
           mapTypeId: 'terrain',
+          tilt: 0,
           disableDefaultUI: true,
           gestureHandling: 'none',
           keyboardShortcuts: false,
         });
 
+        map.setTilt(0);
         mapRef.current = map;
 
         // Add Hazard Polygon
@@ -80,33 +82,37 @@ export function MiniMapCard({
         }
 
         // Add User Location Pin using AdvancedMarkerElement
-        if (maps.marker?.AdvancedMarkerElement) {
-          const pin = new maps.marker.PinElement({
-            background: Colors.meltwater,
-            borderColor: '#FFFFFF',
-            glyphColor: '#FFFFFF',
-            scale: 0.7,
-          });
-          new maps.marker.AdvancedMarkerElement({
+        const AdvancedMarker =
+          maps.marker?.AdvancedMarkerElement ||
+          (window.google?.maps as any)?.marker?.AdvancedMarkerElement;
+        const Pin =
+          maps.marker?.PinElement ||
+          (window.google?.maps as any)?.marker?.PinElement;
+
+        if (AdvancedMarker) {
+          const pinElement = Pin
+            ? new Pin({
+                background: Colors.meltwater,
+                borderColor: '#FFFFFF',
+                glyphColor: '#FFFFFF',
+                scale: 0.7,
+              }).element
+            : (() => {
+                const el = document.createElement('div');
+                el.style.width = '14px';
+                el.style.height = '14px';
+                el.style.borderRadius = '50%';
+                el.style.backgroundColor = Colors.meltwater;
+                el.style.border = '2.5px solid #FFFFFF';
+                el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.35)';
+                return el;
+              })();
+
+          new AdvancedMarker({
             position: center,
             map,
             title: userLocationText,
-            content: pin.element,
-            zIndex: 10,
-          });
-        } else {
-          new maps.Marker({
-            position: center,
-            map,
-            title: userLocationText,
-            icon: {
-              path: maps.SymbolPath.CIRCLE,
-              scale: 6,
-              fillColor: Colors.meltwater,
-              fillOpacity: 1.0,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 2.5,
-            },
+            content: pinElement,
             zIndex: 10,
           });
         }
