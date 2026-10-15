@@ -13,6 +13,9 @@ import {
 import { apiClient } from '@/services/api';
 import { TRANSLATIONS, Translations, LanguageCode } from '@/i18n/translations';
 
+import { LakeId, LakeConfig, LAKES_REGISTRY } from '@/constants/lakes';
+import { DownstreamReachConfig, DOWNSTREAM_REACHES } from '@/constants/downstreamReaches';
+
 interface AppState {
   // Core State
   alertLevel: AlertLevel;
@@ -26,6 +29,15 @@ interface AppState {
   isLoading: boolean;
   error: string | null;
 
+  // Multi-Lake & Downstream Reach State
+  activeLakeId: LakeId;
+  activeLake: LakeConfig;
+  activeReach: DownstreamReachConfig;
+  surgeMinutesRemaining: number;
+  mapViewMode: 'TACTICAL_2D' | 'BASIN_3D';
+  sosDelayMode: 'instant' | '3s_delay';
+  isSimulatingBreach: boolean;
+
   // UI Interactive States
   mapMode: 'EVACUATE' | 'NAVIGATE';
   targetPerson: 'ME' | 'OTHER';
@@ -36,6 +48,12 @@ interface AppState {
 
   // Actions
   init: () => Promise<void>;
+  setActiveLakeId: (lakeId: LakeId) => void;
+  setMapViewMode: (mode: 'TACTICAL_2D' | 'BASIN_3D') => void;
+  setSosDelayMode: (mode: 'instant' | '3s_delay') => void;
+  setSimulatingBreach: (active: boolean) => void;
+  decrementSurgeMinutes: () => void;
+  resetSurgeCountdown: () => void;
   setAlertLevel: (level: AlertLevel) => Promise<void>;
   setLanguage: (lang: LanguageCode) => Promise<void>;
   setMapMode: (mode: 'EVACUATE' | 'NAVIGATE') => void;
@@ -62,12 +80,55 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoading: false,
   error: null,
 
+  // Multi-Lake & Downstream Reach Initial State
+  activeLakeId: 'imja_tsho',
+  activeLake: LAKES_REGISTRY.imja_tsho,
+  activeReach: DOWNSTREAM_REACHES.imja_tsho,
+  surgeMinutesRemaining: 42,
+  mapViewMode: 'TACTICAL_2D',
+  sosDelayMode: '3s_delay',
+  isSimulatingBreach: false,
+
   mapMode: 'EVACUATE',
   targetPerson: 'ME',
   isLegendOpen: false,
   isSosModalOpen: false,
   isAddContactModalOpen: false,
   sosBroadcastResult: null,
+
+  setActiveLakeId: (lakeId: LakeId) => {
+    const lake = LAKES_REGISTRY[lakeId] || LAKES_REGISTRY.imja_tsho;
+    const reach = DOWNSTREAM_REACHES[lakeId] || DOWNSTREAM_REACHES.imja_tsho;
+    set({
+      activeLakeId: lakeId,
+      activeLake: lake,
+      activeReach: reach,
+      surgeMinutesRemaining: lake.surgeMinutesToSettlement,
+    });
+  },
+
+  setMapViewMode: (mode: 'TACTICAL_2D' | 'BASIN_3D') => {
+    set({ mapViewMode: mode });
+  },
+
+  setSosDelayMode: (mode: 'instant' | '3s_delay') => {
+    set({ sosDelayMode: mode });
+  },
+
+  setSimulatingBreach: (active: boolean) => {
+    set({ isSimulatingBreach: active });
+  },
+
+  decrementSurgeMinutes: () => {
+    set((state) => ({
+      surgeMinutesRemaining: Math.max(0, state.surgeMinutesRemaining - 1),
+    }));
+  },
+
+  resetSurgeCountdown: () => {
+    const activeLake = get().activeLake;
+    set({ surgeMinutesRemaining: activeLake.surgeMinutesToSettlement });
+  },
 
   init: async () => {
     try {
