@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import MapView, { Marker, Polygon, Polyline, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { Colors } from '@/constants/tokens';
 import { SafePoint } from '@/types';
+import { LakeConfig } from '@/constants/lakes';
+import { DownstreamReachConfig } from '@/constants/downstreamReaches';
 import {
   DINGBOCHE_COORDINATES,
   HAZARD_INUNDATION_GEOJSON,
@@ -15,6 +17,8 @@ interface HazardMapCanvasProps {
   selectedSafePoint: SafePoint | null;
   onSelectSafePoint: (safePoint: SafePoint) => void;
   safePoints: SafePoint[];
+  lake?: LakeConfig;
+  reach?: DownstreamReachConfig;
 }
 
 export function HazardMapCanvas({
@@ -23,11 +27,33 @@ export function HazardMapCanvas({
   selectedSafePoint,
   onSelectSafePoint,
   safePoints,
+  lake,
+  reach,
 }: HazardMapCanvasProps) {
   const mapRef = useRef<MapView>(null);
 
-  // Convert GeoJSON Polygon [lng, lat] to react-native-maps { latitude, longitude }
+  // Settlement location: dynamic if lake provided, else Dingboche
+  const settlementCoords = useMemo(() => {
+    if (lake?.primarySettlement?.coordinates) {
+      return {
+        latitude: lake.primarySettlement.coordinates[1],
+        longitude: lake.primarySettlement.coordinates[0],
+      };
+    }
+    return {
+      latitude: DINGBOCHE_COORDINATES[1],
+      longitude: DINGBOCHE_COORDINATES[0],
+    };
+  }, [lake]);
+
+  // Convert Hazard Inundation Corridor Polygon to { latitude, longitude }
   const hazardPolygonCoords = useMemo(() => {
+    if (reach?.inundationCorridor && reach.inundationCorridor.length > 0) {
+      return reach.inundationCorridor.map(([lng, lat]) => ({
+        latitude: lat,
+        longitude: lng,
+      }));
+    }
     const feature = HAZARD_INUNDATION_GEOJSON.features[0];
     if (feature && feature.geometry.type === 'Polygon') {
       return feature.geometry.coordinates[0].map(([lng, lat]) => ({
@@ -36,10 +62,16 @@ export function HazardMapCanvas({
       }));
     }
     return [];
-  }, []);
+  }, [reach]);
 
-  // Convert GeoJSON LineString [lng, lat] to react-native-maps { latitude, longitude }
+  // Convert Safe Escape Ridge Route to { latitude, longitude }
   const escapeRouteCoords = useMemo(() => {
+    if (reach?.safeRidgePath && reach.safeRidgePath.length > 0) {
+      return reach.safeRidgePath.map(([lng, lat]) => ({
+        latitude: lat,
+        longitude: lng,
+      }));
+    }
     const feature = SAFE_ESCAPE_ROUTE_GEOJSON.features[0];
     if (feature && feature.geometry.type === 'LineString') {
       return feature.geometry.coordinates.map(([lng, lat]) => ({
@@ -48,17 +80,32 @@ export function HazardMapCanvas({
       }));
     }
     return [];
-  }, []);
+  }, [reach]);
 
   const initialRegion: Region = useMemo(
     () => ({
-      latitude: DINGBOCHE_COORDINATES[1],
-      longitude: DINGBOCHE_COORDINATES[0],
-      latitudeDelta: 0.038,
-      longitudeDelta: 0.038,
+      latitude: settlementCoords.latitude,
+      longitude: settlementCoords.longitude,
+      latitudeDelta: 0.045,
+      longitudeDelta: 0.045,
     }),
-    []
+    [settlementCoords]
   );
+
+  // Pan when lake changes
+  useEffect(() => {
+    if (mapRef.current && settlementCoords) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: settlementCoords.latitude,
+          longitude: settlementCoords.longitude,
+          latitudeDelta: 0.045,
+          longitudeDelta: 0.045,
+        },
+        800
+      );
+    }
+  }, [settlementCoords]);
 
   // Smoothly pan and zoom camera when a safe point is selected
   useEffect(() => {
@@ -67,13 +114,18 @@ export function HazardMapCanvas({
         {
           latitude: selectedSafePoint.coordinates.latitude,
           longitude: selectedSafePoint.coordinates.longitude,
-          latitudeDelta: 0.018,
-          longitudeDelta: 0.018,
+          latitudeDelta: 0.022,
+          longitudeDelta: 0.022,
         },
         900
       );
     }
   }, [selectedSafePoint]);
+
+  const settlementName = lake?.primarySettlement?.name || 'Dingboche';
+  const settlementElev = lake?.primarySettlement?.elevationM || 4410;
+  const safeHavenName = lake?.primarySafeHaven?.name || 'North Ridge Gompa';
+  const safeHavenGain = lake?.primarySafeHaven?.elevationGainM || 210;
 
   return (
     <View style={styles.container}>
@@ -103,7 +155,6 @@ export function HazardMapCanvas({
         {/* 2. Safe Evacuation Escape Route (Ridge line) */}
         {escapeRouteCoords.length > 0 && (
           <>
-            {/* White casing underlay for high visibility over mountain terrain */}
             <Polyline
               coordinates={escapeRouteCoords}
               strokeColor="#FFFFFF"
@@ -112,7 +163,6 @@ export function HazardMapCanvas({
               lineJoin="round"
               zIndex={3}
             />
-            {/* Active cirque teal escape route */}
             <Polyline
               coordinates={escapeRouteCoords}
               strokeColor={Colors.cirqueTeal}
@@ -124,26 +174,43 @@ export function HazardMapCanvas({
           </>
         )}
 
-        {/* 3. User Location Marker */}
+        {/* 3. Primary Settlement User Location Marker */}
         <Marker
-          coordinate={{
-            latitude: DINGBOCHE_COORDINATES[1],
-            longitude: DINGBOCHE_COORDINATES[0],
-          }}
-          title={targetPerson === 'ME' ? 'Your Location' : 'Meena Location'}
-          description="Dingboche (4,410m)"
+          coordinate={settlementCoords}
+          title={targetPerson === 'ME' ? 'Your Location' : 'Contact Location'}
+          description={`${settlementName} (${settlementElev.toLocaleString()}m)`}
           zIndex={10}>
           <View style={styles.userMarkerContainer}>
             <View style={styles.userDot} />
             <View style={styles.userPill}>
               <Text style={styles.userPillText}>
-                {targetPerson === 'ME' ? 'You • Dingboche' : 'Meena • Dingboche'}
+                {targetPerson === 'ME' ? `You • ${settlementName}` : `Contact • ${settlementName}`}
               </Text>
             </View>
           </View>
         </Marker>
 
-        {/* 4. Safe Point Markers */}
+        {/* 4. Safe Haven Marker (Ridge Destination) */}
+        {escapeRouteCoords.length > 0 && (
+          <Marker
+            coordinate={escapeRouteCoords[escapeRouteCoords.length - 1]}
+            title={safeHavenName}
+            description={`+${safeHavenGain}m High Ground (100% Solid Bedrock)`}
+            zIndex={15}>
+            <View style={styles.spMarkerContainer}>
+              <View style={[styles.spBadge, styles.spBadgeSelected]}>
+                <Text style={styles.spBadgeText}>▲</Text>
+              </View>
+              <View style={[styles.spPill, styles.spPillSelected]}>
+                <Text style={[styles.spPillText, styles.spPillTextSelected]}>
+                  {safeHavenName} (+{safeHavenGain}m)
+                </Text>
+              </View>
+            </View>
+          </Marker>
+        )}
+
+        {/* 5. Additional Safe Points */}
         {safePoints.map((sp) => {
           const isSelected = selectedSafePoint?.pointId === sp.pointId;
           return (
@@ -177,7 +244,7 @@ export function HazardMapCanvas({
 
 const styles = StyleSheet.create({
   container: {
-    height: 480,
+    flex: 1,
     width: '100%',
     position: 'relative',
     backgroundColor: '#E8ECEF',
