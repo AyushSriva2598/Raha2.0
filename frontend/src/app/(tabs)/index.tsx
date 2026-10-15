@@ -14,6 +14,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { WaterlineHero } from '@/components/waterline';
 import { MiniMapCard } from '@/components/mini-map';
 import { EmergencySosModal } from '@/components/sos-modal';
+import { EmergencyHeader } from '@/components/emergency-header';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -90,45 +91,16 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.outerContainer}>
+      <View style={{ paddingTop: topPadding, backgroundColor: Colors.cardBgLight }}>
+        <EmergencyHeader />
+      </View>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: topPadding, paddingBottom: 120 + insets.bottom },
+          { paddingTop: Spacing.sm, paddingBottom: 120 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}>
-        {/* Top Header - with proper status bar inset */}
-        <View style={styles.topHeader}>
-          <View style={styles.brandingCol}>
-            <View style={styles.logoRow}>
-              <View style={styles.logoCircle}>
-                <Compass size={22} color={Colors.meltwater} />
-              </View>
-              <View>
-                <Text style={styles.brandName}>{strings.appName}</Text>
-                <Text style={styles.brandSub}>{strings.appSubtitle}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.headerRight}>
-            <Pressable
-              style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-              onPress={handleNotificationsClick}>
-              <Bell size={20} color={Colors.moraineInk} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
-              onPress={() => router.push('/profile' as any)}>
-              <Image
-                source={{
-                  uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
-                }}
-                style={styles.avatarImage}
-              />
-            </Pressable>
-          </View>
-        </View>
 
         {/* Dynamic Waterline & Status Hero */}
         <WaterlineHero
