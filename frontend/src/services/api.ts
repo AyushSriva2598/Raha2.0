@@ -148,7 +148,8 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
   async updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/user/profile`, {
+      const activeBase = this.getBaseUrl();
+      const res = await fetch(`${activeBase}/api/user/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -167,7 +168,8 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
   async toggleContactDispatch(contactId: string, isActive: boolean): Promise<SosContact> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/user/contacts/${contactId}`, {
+      const activeBase = this.getBaseUrl();
+      const res = await fetch(`${activeBase}/api/user/contacts/${contactId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive }),
@@ -188,7 +190,8 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
   async addEmergencyContact(contactData: Omit<SosContact, 'contactId'>): Promise<SosContact> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/user/contacts`, {
+      const activeBase = this.getBaseUrl();
+      const res = await fetch(`${activeBase}/api/user/contacts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contactData),
@@ -211,7 +214,8 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
   async triggerEmergencySos(payload: SosBroadcastPayload): Promise<SosResponse> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/alerts/sos-broadcast`, {
+      const activeBase = this.getBaseUrl();
+      const res = await fetch(`${activeBase}/api/alerts/sos-broadcast`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -233,7 +237,8 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
   async updateThreatLevel(level: AlertLevel): Promise<LakeAssessment> {
     try {
-      const res = await fetch(`${this.baseUrl}/api/scenario/set-level`, {
+      const activeBase = this.getBaseUrl();
+      const res = await fetch(`${activeBase}/api/scenario/set-level`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ level }),

@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import * as Haptics from 'expo-haptics';
+import { safeHaptics } from '@/utils/safeHaptics';
 import { Colors, Typography, Radii, Shadows } from '@/constants/theme';
 
 export interface SosButtonProps {
@@ -52,8 +52,8 @@ export function SosButton({
     holdStartRef.current = Date.now();
     lastTickSecondRef.current = 0;
 
-    // Initial haptic tap
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    // Initial tactile tap
+    safeHaptics.tap();
 
     timerRef.current = setInterval(() => {
       if (!holdStartRef.current) return;
@@ -61,10 +61,10 @@ export function SosButton({
       const elapsed = Date.now() - holdStartRef.current;
       const currentSecond = Math.floor(elapsed / 1000);
 
-      // Haptic tick every second
+      // Tactile tick every second
       if (currentSecond > lastTickSecondRef.current && currentSecond < 3) {
         lastTickSecondRef.current = currentSecond;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        safeHaptics.tick();
       }
 
       const currentProgress = Math.min(elapsed / HOLD_DURATION_MS, 1);
@@ -73,7 +73,7 @@ export function SosButton({
       if (elapsed >= HOLD_DURATION_MS) {
         // Complete!
         clearHold();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        safeHaptics.success();
         if (onTrigger) {
           onTrigger();
         }

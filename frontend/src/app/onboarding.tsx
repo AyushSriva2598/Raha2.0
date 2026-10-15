@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TextInput,
   Pressable,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Radii, Shadows, Spacing } from '@/constants/tokens';
 import { useAppStore } from '@/store/useAppStore';
 import { router } from 'expo-router';
