@@ -1,57 +1,163 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
+/**
+ * Raha Design System Tokens
+ * Strict adherence to Atkinson Hyperlegible typography and high-contrast emergency palette.
+ */
+
 export const Colors = {
+  // Core UI tokens
+  ink: '#14213D',          // text, icons
+  text2: '#475467',        // secondary text
+  text3: '#667085',        // tertiary, timestamps
+  bg: '#F4F6F8',           // page background (Activity, Profile)
+  surface: '#FFFFFF',      // sheets, cards
+  border: '#E4E7EC',       // hairlines
+
+  // Safety & Hazard tokens
+  danger: '#C62828',       // alerts, SOS, banner
+  dangerDark: '#B3261E',   // danger text on light
+  dangerTint: '#FDECEA',   // zone card background
+  safe: '#1B7F4B',         // safe route, primary action
+  safeDark: '#0F5C35',     // safe text on light
+  safeTint: '#E3F4EA',     // selected route, icon bg
+  safeTintAlt: '#F1FAF5',  // alternative safe card tint
+  watch: '#F08A24',        // Watch/Advisory lake zones
+  watchText: '#92400E',    // amber text
+  watchTextAlt: '#B45309', // amber meta text
+  low: '#E3B505',          // low-risk lake zones
+  you: '#2563EB',          // user location dot
+
+  // Activity item badge tints
+  activity: {
+    alert: '#FDECEA',
+    report: '#FFF3D6',
+    news: '#E8EEF9',
+    trip: '#E3F4EA',
+    system: '#F2F4F7',
+  },
+
+  // Route colors
+  routes: {
+    safest: '#1B7F4B',
+    safestCasing: '#FFFFFF',
+    balanced: '#B45309',
+    shortest: '#B3261E',
+  },
+
+  // Map lake zones & flood path
+  floodPath: {
+    fill: '#7EDBE861', // 38% teal (#7EDBE8)
+    stroke: '#46B4CE',
+  },
+
+  // Backward compatibility shims for themed hooks
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#14213D',
+    background: '#FFFFFF',
+    backgroundElement: '#F4F6F8',
+    backgroundSelected: '#E3F4EA',
+    textSecondary: '#475467',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#FFFFFF',
+    background: '#14213D',
+    backgroundElement: '#1F2E4D',
+    backgroundSelected: '#0F5C35',
+    textSecondary: '#667085',
   },
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColor = keyof typeof Colors.light;
+
+/**
+ * 5-tier Risk level taxonomy
+ */
+export const RiskColors = {
+  NORMAL: '#12B76A',
+  WATCH: '#EAAA08',
+  ADVISORY: '#F79009',
+  WARNING: '#D92D20',
+  EVACUATE: '#912018',
+} as const;
+
+export type RiskLevel = keyof typeof RiskColors;
+
+/**
+ * Map lake circles by alert severity
+ */
+export const LakeCircleColors = {
+  NORMAL: '#E3B505',
+  WATCH: '#F08A24',
+  ADVISORY: '#F08A24',
+  WARNING: '#C62828',
+  EVACUATE: '#C62828',
+} as const;
+
+export const Typography = {
+  family: {
+    regular: 'AtkinsonHyperlegible_400Regular',
+    bold: 'AtkinsonHyperlegible_700Bold',
+  },
+  // Minimum text size 13. Body 16-17. Never light weights.
+  sizes: {
+    caption: 13,
+    meta: 14,
+    body: 16,
+    bodyLarge: 17,
+    title: 20,
+    heading: 24,
+    hero: 30,
+  },
+} as const;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    regular: Typography.family.regular,
+    bold: Typography.family.bold,
+    sans: Typography.family.regular,
+    serif: 'serif',
+    rounded: Typography.family.regular,
+    mono: 'monospace',
   },
   default: {
-    sans: 'normal',
+    regular: Typography.family.regular,
+    bold: Typography.family.bold,
+    sans: Typography.family.regular,
     serif: 'serif',
-    rounded: 'normal',
+    rounded: Typography.family.regular,
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+    regular: 'Atkinson Hyperlegible, sans-serif',
+    bold: 'Atkinson Hyperlegible, sans-serif',
+    sans: 'Atkinson Hyperlegible, sans-serif',
+    serif: 'serif',
+    rounded: 'sans-serif',
+    mono: 'monospace',
   },
 });
 
+export const Radii = {
+  chip: 9999,
+  full: 9999,
+  tile: 16,
+  card: 20,
+  cardLarge: 24,
+  button: 20,
+  sheet: 28, // sheets radius 28 top
+} as const;
+
 export const Spacing = {
+  // Raha tokens
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  sidePadding: 16, // Screen side padding 16-20
+
+  // Compatibility tokens
   half: 2,
   one: 4,
   two: 8,
@@ -61,5 +167,36 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+export const Shadows = {
+  sheet: {
+    shadowColor: '#14213D',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 22,
+    elevation: 12,
+  },
+  card: {
+    shadowColor: '#14213D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  button: {
+    shadowColor: '#14213D',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  sos: {
+    shadowColor: '#C62828',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+} as const;
+
+export const BottomTabInset = Platform.select({ ios: 84, android: 84 }) ?? 84;
 export const MaxContentWidth = 800;

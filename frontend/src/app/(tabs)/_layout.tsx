@@ -1,17 +1,22 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { StitchBottomBar } from '@/components/navigation-bar';
+import { TabBar } from '@/components/common/TabBar';
+import { EmergencySosModal } from '@/components/sos-modal';
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      tabBar={() => <StitchBottomBar />}
-      screenOptions={{
-        headerShown: false,
-      }}>
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="map" options={{ title: 'Map' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-    </Tabs>
+    <>
+      <Tabs
+        tabBar={() => <TabBar />}
+        screenOptions={{
+          headerShown: false,
+        }}>
+        <Tabs.Screen name="index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="map" options={{ title: 'Map' }} />
+        <Tabs.Screen name="activity" options={{ title: 'Activity' }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      </Tabs>
+      <EmergencySosModal />
+    </>
   );
 }
