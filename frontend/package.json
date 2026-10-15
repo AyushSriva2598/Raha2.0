@@ -49,6 +49,7 @@
     "start": "node ./scripts/start.js",
     "start:tunnel": "expo start --tunnel",
     "tunnel": "expo start --tunnel",
+    "adb:reverse": "adb reverse tcp:4000 tcp:4000 && adb reverse tcp:8081 tcp:8081",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",

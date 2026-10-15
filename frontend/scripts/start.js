@@ -43,6 +43,19 @@ if (isTunnel) {
   }
 }
 
+// Automatically configure adb reverse for connected Android USB devices
+try {
+  const { execSync } = require('child_process');
+  const devices = execSync('adb devices', { stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).toString();
+  const hasConnectedDevice = devices.split('\n').slice(1).some((line) => line.trim().endsWith('device'));
+  if (hasConnectedDevice) {
+    execSync('adb reverse tcp:4000 tcp:4000 && adb reverse tcp:8081 tcp:8081', { stdio: 'ignore', timeout: 2000 });
+    console.log('\x1b[32m[Raha ADB]\x1b[0m Configured adb reverse tcp:4000 (Backend) & tcp:8081 (Metro) on connected device.');
+  }
+} catch {
+  // Ignore if adb is not present or device is unreachable
+}
+
 // Spawn expo start with forwarded arguments
 const isBun = process.env.npm_execpath && process.env.npm_execpath.includes('bun');
 const bin = isBun ? 'bunx' : 'npx';

@@ -270,33 +270,44 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
   }
 }
 
-// Dynamic API URL resolver: On physical mobile devices, automatically substitutes localhost with the Expo LAN host
+// Dynamic API URL resolver: Supports USB adb reverse, physical device LAN, and remote tunnels
 export function getResolvedApiUrl(): string {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
+  // 1. Web environment
   if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined' && window.location?.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (
+      typeof window !== 'undefined' &&
+      window.location?.hostname &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1'
+    ) {
       return `http://${window.location.hostname}:4000`;
     }
     return envUrl || 'http://localhost:4000';
   }
 
-  // On native mobile (iOS / Android in Expo Go), dynamically resolve computer's LAN IP or tunnel host
+  // 2. Explicit custom/remote API URL configured (e.g. dedicated backend tunnel or LAN IP)
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  // 3. Android with USB adb reverse (tcp:4000) or emulator:
+  // When 'adb reverse tcp:4000 tcp:4000' is run, http://localhost:4000 routes directly to the dev machine.
+  // If EXPO_PUBLIC_API_URL is explicitly set to http://localhost:4000, prefer it on Android.
+  if (Platform.OS === 'android' && envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  // 4. Physical device over LAN WiFi (Expo hostUri LAN fallback)
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(':')[0];
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      // If connected via tunnel (e.g. *.ngrok-free.dev or *.exp.direct), route via Metro HTTPS proxy
-      if (host.includes('ngrok') || host.includes('exp.direct')) {
-        return `https://${host}`;
-      }
+    // Do NOT route API calls to Metro's tunnel (ngrok / exp.direct) as Metro only bundles JS and returns 502 for /api
+    const isMetroTunnel = host.includes('ngrok') || host.includes('exp.direct');
+    if (host && host !== 'localhost' && host !== '127.0.0.1' && !isMetroTunnel) {
       return `http://${host}:4000`;
     }
-  }
-
-  // If user explicitly configured an external or LAN IP, use it
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    return envUrl;
   }
 
   return envUrl || 'http://localhost:4000';

@@ -13,6 +13,7 @@
     "start:frontend": "npm --prefix frontend start",
     "start:frontend:tunnel": "cd frontend && bun start --start-tunnel",
     "start:backend": "npm --prefix backend run dev",
+    "adb:reverse": "adb reverse tcp:4000 tcp:4000 && adb reverse tcp:8081 tcp:8081",
     "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend start\"",
     "lint:frontend": "npm --prefix frontend run lint",
     "lint:backend": "npm --prefix backend run lint",
