@@ -3,8 +3,7 @@
 
 import { NavigationRouteOption } from '../types/index.js';
 
-const GOOGLE_MAPS_API_KEY =
-  process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU';
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
 
 export class GoogleMapsService {
   private apiKey: string;

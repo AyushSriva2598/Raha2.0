@@ -26,7 +26,6 @@ export function HazardMapCanvas({
   onSelectSafePoint,
   safePoints,
 }: HazardMapCanvasProps) {
-  console.log('🌐 [HELLO WORLD] HazardMapCanvas (Web) is RENDERING!');
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);

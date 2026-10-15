@@ -24,7 +24,6 @@ export function MiniMapCard({
   userLocationText = 'You • Dingboche (4,410m)',
   lakeDistText = 'Lake dist: 7.2 km',
 }: MiniMapCardProps) {
-  console.log('🌐 [HELLO WORLD] MiniMapCard (Web) is RENDERING!');
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 

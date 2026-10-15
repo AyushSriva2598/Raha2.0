@@ -9,10 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.raha.hazardapp",
-      "icon": "./assets/expo.icon",
-      "config": {
-        "googleMapsApiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
-      }
+      "icon": "./assets/expo.icon"
     },
     "android": {
       "package": "com.raha.hazardapp",
@@ -22,12 +19,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
-        }
-      }
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -37,9 +29,7 @@
       "expo-router",
       [
         "react-native-maps",
-        {
-          "androidGoogleMapsApiKey": "AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU"
-        }
+        {}
       ],
       [
         "expo-splash-screen",

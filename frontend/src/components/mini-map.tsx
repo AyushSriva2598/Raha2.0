@@ -22,12 +22,6 @@ export function MiniMapCard({
   userLocationText = 'You • Dingboche (4,410m)',
   lakeDistText = 'Lake dist: 7.2 km',
 }: MiniMapCardProps) {
-  console.log('🌍 [HELLO WORLD] MiniMapCard (Mobile Native) is RENDERING!', {
-    basinTitle,
-    userLocationText,
-    platform: Platform.OS,
-  });
-
   const handlePress = () => {
     if (onPress) {
       onPress();
@@ -66,10 +60,7 @@ export function MiniMapCard({
           zoomEnabled={false}
           rotateEnabled={false}
           pitchEnabled={false}
-          mapType="standard"
-          onMapReady={() => {
-            console.log('🌍 [HELLO WORLD] MiniMapCard MapView ON_MAP_READY fired!');
-          }}>
+          mapType="standard">
 
           {hazardCoords.length > 0 && (
             <Polygon

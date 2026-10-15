@@ -29,8 +29,7 @@ if (typeof window !== 'undefined' && !(window as any).__gmaps_warn_patched) {
 let googleMapsPromise: Promise<typeof google.maps> | null = null;
 
 export const GOOGLE_MAPS_API_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-  'AIzaSyCRy8UnT02ssQj7PSOtlp7RK4swXZWO9GU';
+  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 export function loadGoogleMaps(): Promise<typeof google.maps> {
   if (typeof window === 'undefined') {
