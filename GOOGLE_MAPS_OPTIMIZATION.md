@@ -135,3 +135,38 @@ After applying these fixes:
 - `npm run typecheck:backend` -> **0 errors**
 - `npm run lint:backend` -> **0 errors**
 - `npm run build:backend` -> **0 errors**
+
+---
+
+## 6. Android Native Maps API Key Restriction & Security
+
+To prevent unauthorized quota usage and protect against credential theft, the Google Maps API key must be restricted in Google Cloud Console.
+
+### EAS Android Keystore Credentials
+Retrieved via `npx eas credentials --platform android`:
+
+- **Application Identifier (Package Name)**: `com.raha.hazardapp`
+- **Keystore Type**: `JKS`
+- **Key Alias**: `5f3fe2b296c0fa31faa3aa89742dd4e7`
+- **SHA-1 Fingerprint**: `55:45:8F:75:05:98:8F:5A:DC:35:B2:88:F4:AA:B3:F8:54:2C:F8:9A`
+- **SHA-256 Fingerprint**: `AA:AD:3D:63:CF:BD:8E:D4:51:14:B2:F8:89:A0:1D:18:49:5C:A8:23:52:E6:52:F2:B7:6D:32:53:1C:E1:B9:24`
+
+### Google Cloud Console Configuration Steps
+
+1. Navigate to [Google Cloud Console > APIs & Services > Credentials](https://console.cloud.google.com/apis/credentials).
+2. Select your Google Maps API key.
+3. Under **Application restrictions**:
+   - Choose **Android apps**.
+   - Click **+ Add an item**.
+   - **Package name**: `com.raha.hazardapp`
+   - **SHA-1 certificate fingerprint**: `55:45:8F:75:05:98:8F:5A:DC:35:B2:88:F4:AA:B3:F8:54:2C:F8:9A`
+4. Under **API restrictions**:
+   - Choose **Restrict key**.
+   - Select:
+     - `Maps SDK for Android`
+     - `Maps JavaScript API` (if sharing key with web)
+     - `Directions API` & `Elevation API` (if sharing with backend routing)
+     *(Recommended: Use a separate server-restricted key for backend calls)*
+5. Click **Save**.
+6. Retest on device: Tiles will load natively with zero authorization errors in `adb logcat`.
+
