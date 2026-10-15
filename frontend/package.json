@@ -47,8 +47,10 @@
   "scripts": {
     "postinstall": "node ./scripts/patch-expo-ngrok.js",
     "start": "node ./scripts/start.js",
-    "start:tunnel": "expo start --tunnel",
-    "tunnel": "expo start --tunnel",
+    "start:dev": "node ./scripts/start.js --dev-client",
+    "dev-client": "node ./scripts/start.js --dev-client",
+    "start:tunnel": "node ./scripts/start.js --tunnel",
+    "tunnel": "node ./scripts/start.js --tunnel",
     "adb:reverse": "adb reverse tcp:4000 tcp:4000 && adb reverse tcp:8081 tcp:8081",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",

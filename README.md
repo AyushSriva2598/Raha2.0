@@ -36,30 +36,35 @@ A life-critical, mobile-first Early Warning System (EWS) for downstream Himalaya
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Daily Workflow
 
-### 1. Run the Frontend (Mobile App)
+> 📖 **Full Workflow & Network Guide**: See [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for details on zero-rebuild fast refresh, USB `adb reverse`, and EAS builds.
+
+### 1. Run Mobile Dev Client (Physical Android Phone)
 
 ```bash
-cd frontend
-bun install
-bun start --start-tunnel  # Starts Expo with ngrok tunnel
+# Connect phone via USB, then run from root:
+npm run start:dev
+
+# Or run both backend & mobile frontend concurrently:
+npm run dev:mobile
 ```
+*(Automatically sets up `adb reverse` for port `4000` backend and port `8081` Metro).*
 
-### 2. Run the Product Backend
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 3. Run from Root Workspace
+### 2. Run Product Backend
 
 ```bash
-npm run start:frontend  # Starts Expo mobile app
-npm run start:backend   # Starts Product backend on port 4000
+npm run start:backend   # Starts backend on http://localhost:4000
 npm run build:backend   # Compiles backend TypeScript
+```
+
+### 3. Verification & Typechecks
+
+```bash
+npm run typecheck:frontend
+npm run lint:frontend
+npm run typecheck:backend
+npm run lint:backend
 ```
 
 ---
