@@ -11,7 +11,7 @@ export const TERRAIN_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <style>${MAPLIBRE_CSS}</style>
 <style>
-  html,body,#map{margin:0;padding:0;height:100%;background:#0b0e12;overflow:hidden}
+  html,body,#map{margin:0;padding:0;height:100%;background:#101418;overflow:hidden}
   .maplibregl-ctrl-attrib{font:10px/1.3 sans-serif;max-width:70vw}
   .maplibregl-ctrl-attrib.maplibregl-compact{margin:0 0 4px 4px}
 </style>
@@ -38,24 +38,27 @@ export const TERRAIN_HTML = `<!doctype html>
     return Promise.resolve({data:b64buf(b)});
   });
   var empty = function(){ return {type:'FeatureCollection',features:[]}; };
-  var S = { usePack:false, lake:null, frames:[], idx:0, layers:{satellite:false,history:true,baseline:true}, rotate:false, exag:1.5, ready:false, inset:230 };
+  var S = { usePack:false, lake:null, frames:[], idx:0, layers:{satellite:false,history:true,baseline:true}, rotate:false, exag:1.6, ready:false, inset:230 };
   var map, rafId = null;
 
   function build(lake){
     var DEM = S.usePack ? ['pack://dem/{z}/{x}/{y}'] : ONLINE_DEM;
     var SAT = S.usePack ? ['pack://sat/{z}/{x}/{y}'] : ONLINE_SAT;
-    var bounds = S.usePack && PACK.bounds ? [[PACK.bounds[0]+0.02,PACK.bounds[1]+0.02],[PACK.bounds[2]-0.02,PACK.bounds[3]-0.02]] : undefined;
+    var pb = S.usePack && PACK.bounds ? PACK.bounds : null;
+    // Slab: the DEM only exists inside the tile-aligned block, so the terrain ends in clean cliff walls.
+    var sb = pb ? {bounds:pb,minzoom:13,maxzoom:13} : {maxzoom:15};
+    var bounds = pb ? [[pb[0]-0.03,pb[1]-0.03],[pb[2]+0.03,pb[3]+0.03]] : undefined;
     map = new maplibregl.Map({
       container:'map',
       style:{
         version:8,
         sources:{
-          dem:{type:'raster-dem',tiles:DEM,tileSize:256,maxzoom:S.usePack?13:15,encoding:'terrarium',attribution:'Terrain: AWS Open Data (Terrarium)'},
-          hs:{type:'raster-dem',tiles:DEM,tileSize:256,maxzoom:S.usePack?13:15,encoding:'terrarium'},
-          sat:{type:'raster',tiles:SAT,tileSize:256,maxzoom:13,attribution:'Sentinel-2 cloudless 2020 \\u00a9 EOX (contains modified Copernicus Sentinel data)'}
+          dem:Object.assign({type:'raster-dem',tiles:DEM,tileSize:256,encoding:'terrarium',attribution:'Terrain: AWS Open Data (Terrarium)'},sb),
+          hs:Object.assign({type:'raster-dem',tiles:DEM,tileSize:256,encoding:'terrarium'},sb),
+          sat:Object.assign({type:'raster',tiles:SAT,tileSize:256,attribution:'Sentinel-2 cloudless 2020 \\u00a9 EOX (contains modified Copernicus Sentinel data)'},pb?{bounds:pb,minzoom:13,maxzoom:13}:{maxzoom:13})
         },
         layers:[
-          {id:'bg',type:'background',paint:{'background-color':'#0b0e12'}},
+          {id:'bg',type:'background',paint:{'background-color':'#101418'}},
           {id:'sat',type:'raster',source:'sat',layout:{visibility:'none'},paint:{'raster-saturation':-0.1,'raster-brightness-max':0.9}},
           {id:'hillshade',type:'hillshade',source:'hs',paint:{
             'hillshade-exaggeration':0.8,'hillshade-shadow-color':'#05070a','hillshade-highlight-color':'#d9dde2',
@@ -63,7 +66,7 @@ export const TERRAIN_HTML = `<!doctype html>
         ],
         terrain:{source:'dem',exaggeration:S.exag}
       },
-      center:lake.center, zoom:12.7, pitch:58, bearing:-20, maxPitch:72, minZoom:S.usePack?12.2:9, maxZoom:S.usePack?14.5:16, maxBounds:bounds, attributionControl:{compact:true}
+      center:slabCenter(lake), zoom:S.usePack?11.7:12.7, pitch:55, bearing:20, maxPitch:75, minZoom:S.usePack?10.8:9, maxZoom:S.usePack?14.5:16, maxBounds:bounds, attributionControl:{compact:true}
     });
     map.addControl(new maplibregl.NavigationControl({showCompass:false,visualizePitch:false}),'bottom-right');
     map.on('load', function(){
@@ -113,9 +116,13 @@ export const TERRAIN_HTML = `<!doctype html>
     map.setLayoutProperty('base-line','visibility',S.layers.baseline?'visible':'none');
   }
 
+  function slabCenter(lake){
+    var b = S.usePack && PACK.bounds ? PACK.bounds : null;
+    return b ? [(b[0]+b[2])/2,(b[1]+b[3])/2] : lake.center;
+  }
   function frameCamera(animated){
-    // Lake sits in the upper part of the screen; the app's info card covers the bottom 'inset' px.
-    map.easeTo({center:S.lake.center,zoom:12.7,pitch:58,bearing:-20,padding:{top:70,bottom:S.inset,left:0,right:0},duration:animated?1200:0});
+    // Whole slab in view, tilted; the app's panels cover the bottom 'inset' px.
+    map.easeTo({center:slabCenter(S.lake),zoom:S.usePack?11.25:12.7,pitch:52,bearing:20,padding:{top:70,bottom:S.inset,left:0,right:0},duration:animated?1200:0});
   }
 
   function spin(){
@@ -136,9 +143,9 @@ export const TERRAIN_HTML = `<!doctype html>
         S.lake=m.lake; S.frames=m.frames; S.idx=Math.min(m.index||0,m.frames.length-1);
         if(m.layers) S.layers=m.layers; if(m.inset!=null) S.inset=m.inset;
         if(!map){ build(m.lake); map.once('load',function(){ frameCamera(false); }); }
-        else if(S.ready){
-          if(S.usePack && PACK.bounds) map.setMaxBounds([[PACK.bounds[0]+0.02,PACK.bounds[1]+0.02],[PACK.bounds[2]-0.02,PACK.bounds[3]-0.02]]);
-          drawFrame(); applyLayers(); frameCamera(true); post({type:'ready'});
+        else {
+          // Another lake has its own slab, so rebuild the scene from scratch.
+          S.ready=false; map.remove(); map=null; build(m.lake); map.once('load',function(){ frameCamera(false); });
         }
       } else if(m.type==='frames'){ S.frames=m.frames; S.idx=Math.min(S.idx,m.frames.length-1); drawFrame(); }
       else if(m.type==='frame'){ S.idx=m.index; drawFrame(); }

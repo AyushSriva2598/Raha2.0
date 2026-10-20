@@ -12,8 +12,10 @@ const LAKES = [
   { id: 'south_lhonak', center: [88.196, 27.911] },
   { id: 'imja_tsho', center: [86.9278, 27.8997] },
 ];
-const HALF = { lon: 0.07, lat: 0.055 }; // degrees around the lake centre (~14 x 12 km)
-const ZOOMS = [12, 13];
+// The 3D view shows a "slab": an exact block of 3 x 3 tiles at zoom 13 around the lake (~15 x 13 km).
+// MapLibre requests zoom-13 tiles for the whole zoom range the screen allows, so only that zoom is bundled.
+const Z = 13;
+const GRID = 1; // tiles either side of the lake's tile
 const DEM = (z, x, y) => `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;
 const SAT = (z, x, y) => `https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/${z}/${y}/${x}.jpg`;
 const MAPLIBRE = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl';
@@ -23,6 +25,8 @@ const lat2y = (lat, z) => {
   const r = (lat * Math.PI) / 180;
   return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z);
 };
+const x2lon = (x, z) => (x / 2 ** z) * 360 - 180;
+const y2lat = (y, z) => (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / 2 ** z))) * 180) / Math.PI;
 
 async function get(url) {
   for (let i = 0; i < 4; i++) {
@@ -37,26 +41,25 @@ async function get(url) {
   throw new Error(`Failed ${url}`);
 }
 
-async function layer(urlFn, bounds) {
+async function layer(urlFn, x0, x1, y0, y1) {
   const tiles = {};
-  for (const z of ZOOMS) {
-    const [w, s, e, n] = bounds;
-    const x0 = lon2x(w, z), x1 = lon2x(e, z), y0 = lat2y(n, z), y1 = lat2y(s, z);
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
-      const buf = await get(urlFn(z, x, y));
-      if (buf) tiles[`${z}/${x}/${y}`] = buf.toString('base64');
-    }
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+    const buf = await get(urlFn(Z, x, y));
+    if (buf) tiles[`${Z}/${x}/${y}`] = buf.toString('base64');
   }
-  return { minzoom: ZOOMS[0], maxzoom: ZOOMS[ZOOMS.length - 1], tiles };
+  return { minzoom: Z, maxzoom: Z, tiles };
 }
 
 for (const lake of LAKES) {
-  const bounds = [lake.center[0] - HALF.lon, lake.center[1] - HALF.lat, lake.center[0] + HALF.lon, lake.center[1] + HALF.lat];
-  const dem = await layer(DEM, bounds);
-  const sat = await layer(SAT, bounds);
+  const cx = lon2x(lake.center[0], Z), cy = lat2y(lake.center[1], Z);
+  const [x0, x1, y0, y1] = [cx - GRID, cx + GRID, cy - GRID, cy + GRID];
+  // Tile-aligned rectangle: [west, south, east, north]
+  const bounds = [x2lon(x0, Z), y2lat(y1 + 1, Z), x2lon(x1 + 1, Z), y2lat(y0, Z)];
+  const dem = await layer(DEM, x0, x1, y0, y1);
+  const sat = await layer(SAT, x0, x1, y0, y1);
   const out = path.join(root, 'src/assets/terrain', `${lake.id}.json`);
   fs.writeFileSync(out, JSON.stringify({ id: lake.id, bounds, center: lake.center, dem, sat }));
-  console.log(lake.id, 'dem', Object.keys(dem.tiles).length, 'sat', Object.keys(sat.tiles).length, (fs.statSync(out).size / 1024).toFixed(0) + ' KB');
+  console.log(lake.id, 'dem', Object.keys(dem.tiles).length, 'sat', Object.keys(sat.tiles).length, (fs.statSync(out).size / 1024).toFixed(0) + ' KB', bounds.map((n) => n.toFixed(4)).join(','));
 }
 
 // Bundle the 3D engine so no CDN is needed.
