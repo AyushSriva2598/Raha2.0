@@ -27,7 +27,7 @@ export default function HomeScreen() {
     init,
   } = useAppStore();
 
-  const [mapType, setMapType] = useState<'standard' | 'satellite' | 'terrain'>('terrain');
+  const [mapType, setMapType] = useState<'standard' | 'satellite' | 'terrain'>('standard');
   const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [overrideState, setOverrideState] = useState<HomeHazardState | null>(null);
@@ -66,9 +66,9 @@ export default function HomeScreen() {
 
   const toggleMapLayers = () => {
     setMapType((prev) => {
+      if (prev === 'standard') return 'terrain';
       if (prev === 'terrain') return 'satellite';
-      if (prev === 'satellite') return 'standard';
-      return 'terrain';
+      return 'standard';
     });
   };
 
@@ -78,7 +78,7 @@ export default function HomeScreen() {
       <HomeMap
         lake={activeLake}
         mapType={mapType}
-        bottomSheetHeight={424}
+        bottomSheetHeight={300}
       />
 
       {/* 2. Floating Minimal Header Over White Fade */}

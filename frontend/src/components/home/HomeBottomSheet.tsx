@@ -6,10 +6,7 @@ import {
   Pressable,
   Linking,
 } from 'react-native';
-import BottomSheet, {
-  BottomSheetScrollView,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import {
   AlertTriangle,
   ShieldCheck,
@@ -29,6 +26,7 @@ import { Pill } from '@/components/common/Pill';
 import { StatTile } from '@/components/common/StatTile';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SosButton } from '@/components/common/SosButton';
+import { HomeUpdates } from '@/components/home/HomeUpdates';
 import { LakeConfig } from '@/constants/lakes';
 import { SafePoint, EventLog } from '@/types';
 
@@ -65,8 +63,8 @@ export function HomeBottomSheet({
   const sheetRef = useRef<BottomSheet>(null);
   const [currentSnapIndex, setCurrentSnapIndex] = useState(1); // default 424px
 
-  // Snap points: 120px minimized, 480px collapsed-default, 85% expanded
-  const snapPoints = useMemo(() => [120, 480, '85%'], []);
+  // Snap points: peek, default (map stays mostly visible), expanded
+  const snapPoints = useMemo(() => [96, '38%', '78%'], []);
 
   const handleSheetChanges = useCallback((index: number) => {
     setCurrentSnapIndex(index);
@@ -117,7 +115,7 @@ export function HomeBottomSheet({
             STATE 1: IN FLOOD PATH (Red / Threat Active)
            ========================================================================= */}
         {state === 'FLOOD_PATH' && (
-          <BottomSheetView style={styles.stateContainer}>
+          <View style={styles.stateContainer}>
             {/* Zone Card (dangerTint, radius 24) */}
             <View style={styles.zoneCard}>
               {/* White Pill Header */}
@@ -189,10 +187,10 @@ export function HomeBottomSheet({
                 onTrigger={onOpenSos}
               />
 
-              {/* Start Safe Route: flex 1 green */}
+              {/* Start Safe Route: flex 1 coral */}
               <PrimaryButton
                 title="Start safe route"
-                variant="safe"
+                variant="filled"
                 icon={<Navigation size={18} color="#FFFFFF" />}
                 onPress={handleStartSafeRoute}
                 height={56}
@@ -212,14 +210,14 @@ export function HomeBottomSheet({
                 <Text style={styles.tipsText}>Tips</Text>
               </Pressable>
             </View>
-          </BottomSheetView>
+          </View>
         )}
 
         {/* =========================================================================
             STATE 2: WATCH / ADVISORY (Amber Banner, "Be ready", Prepare button)
            ========================================================================= */}
         {state === 'WATCH_ADVISORY' && (
-          <BottomSheetView style={styles.stateContainer}>
+          <View style={styles.stateContainer}>
             {/* Amber Banner */}
             <View style={styles.amberBanner}>
               <View style={styles.amberBannerIconBox}>
@@ -254,7 +252,7 @@ export function HomeBottomSheet({
                 />
                 <PrimaryButton
                   title="View High Ground Route"
-                  variant="safe"
+                  variant="filled"
                   icon={<Navigation size={18} color="#FFFFFF" />}
                   onPress={handleStartSafeRoute}
                   height={56}
@@ -262,21 +260,21 @@ export function HomeBottomSheet({
                 />
               </View>
             </View>
-          </BottomSheetView>
+          </View>
         )}
 
         {/* =========================================================================
             STATE 3: ALL CLEAR (Green check, Calm sheet, "No active warnings near you")
            ========================================================================= */}
         {state === 'ALL_CLEAR' && (
-          <BottomSheetView style={styles.stateContainer}>
+          <View style={styles.stateContainer}>
             <View style={styles.allClearContainer}>
               <View style={styles.greenCheckCircle}>
                 <CheckCircle size={32} color={Colors.safe} strokeWidth={2.5} />
               </View>
               <Text style={styles.allClearTitle}>No active warnings near you</Text>
               <Text style={styles.allClearSubtext}>
-                Last checked: 2 min ago • All {lake.sensors.length} Khumbu telemetry stations nominal.
+                Demo threat level for {lake.name}. No live lake sensors are connected yet.
               </Text>
 
               <View style={styles.allClearActionRow}>
@@ -287,22 +285,23 @@ export function HomeBottomSheet({
                   onTrigger={onOpenSos}
                 />
                 <PrimaryButton
-                  title="View lakes near you"
-                  variant="outline"
-                  onPress={handleStartSafeRoute}
+                  title="View lakes in 3D"
+                  variant="outlineCoral"
+                  onPress={() => router.push('/terrain' as any)}
                   height={56}
                   style={styles.startSafeButton}
                 />
               </View>
+              <HomeUpdates />
             </View>
-          </BottomSheetView>
+          </View>
         )}
 
         {/* =========================================================================
             STATE 4: LOCATION DENIED (Explain why, Settings button, place search)
            ========================================================================= */}
         {state === 'LOCATION_DENIED' && (
-          <BottomSheetView style={styles.stateContainer}>
+          <View style={styles.stateContainer}>
             <View style={styles.deniedContainer}>
               <MapPin size={28} color={Colors.dangerDark} />
               <Text style={styles.deniedTitle}>Location Access Required</Text>
@@ -325,14 +324,14 @@ export function HomeBottomSheet({
                 </Text>
               </Pressable>
             </View>
-          </BottomSheetView>
+          </View>
         )}
 
         {/* =========================================================================
             EXPANDED SHEET CONTENT (revealed when pulled up to ~85%)
            ========================================================================= */}
         {isExpanded && (
-          <BottomSheetView style={styles.expandedSection}>
+          <View style={styles.expandedSection}>
             <View style={styles.expandedDivider} />
 
             {/* 1. Nearest Shelters & High Ground */}
@@ -386,7 +385,7 @@ export function HomeBottomSheet({
                 </View>
                 <View style={styles.kinTextStack}>
                   <Text style={styles.kinName}>Pasang Lhamo (Spouse)</Text>
-                  <Text style={styles.kinSub}>Dingboche Upper Ridge</Text>
+                  <Text style={styles.kinSub}>Chungthang Monastery Ridge</Text>
                 </View>
                 <Pill
                   label="Safe · 2 min"
@@ -401,7 +400,7 @@ export function HomeBottomSheet({
                   <Text style={styles.kinAvatarText}>MS</Text>
                 </View>
                 <View style={styles.kinTextStack}>
-                  <Text style={styles.kinName}>Mingma Sherpa (Village Head)</Text>
+                  <Text style={styles.kinName}>Karma Lepcha (Village Head)</Text>
                   <Text style={styles.kinSub}>Pheriche High Camp</Text>
                 </View>
                 <Pill
@@ -438,7 +437,7 @@ export function HomeBottomSheet({
                 </View>
               ))}
             </View>
-          </BottomSheetView>
+          </View>
         )}
       </BottomSheetScrollView>
     </BottomSheet>
@@ -452,17 +451,17 @@ const styles = StyleSheet.create({
     borderTopRightRadius: Radii.sheet,
   },
   dragIndicator: {
-    width: 48,
+    width: 56,
     height: 5,
     borderRadius: 3,
-    backgroundColor: Colors.border,
+    backgroundColor: Colors.coral,
     alignSelf: 'center',
     marginVertical: 6,
   },
   scrollContent: {
     paddingHorizontal: Spacing.sidePadding,
     paddingTop: 4,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   stateContainer: {
     width: '100%',

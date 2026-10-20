@@ -27,7 +27,7 @@ export interface WhatToDoModalProps {
 export function WhatToDoModal({
   visible,
   onClose,
-  settlementName = 'Dingboche',
+  settlementName = 'Chungthang',
   safeHavenName = 'Nangkartshang Ridge Lookout',
 }: WhatToDoModalProps) {
   return (
@@ -113,7 +113,7 @@ export function WhatToDoModal({
             <View style={styles.actionRow}>
               <PrimaryButton
                 title="Understood, I am on safe ground"
-                variant="safe"
+                variant="filled"
                 onPress={onClose}
                 height={54}
                 style={{ width: '100%' }}

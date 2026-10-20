@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import { Menu, Layers } from 'lucide-react-native';
+import { Menu, Layers, Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors, Typography, Shadows } from '@/constants/theme';
@@ -35,9 +35,7 @@ export function HomeHeader({
     : 'PS';
 
   return (
-    <View style={[styles.wrapper, { paddingTop: Math.max(insets.top, 14) }]}>
-      <View style={styles.fadeBackground} />
-
+    <View style={[styles.wrapper, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
       <View style={styles.headerRow}>
         {/* Left: Menu button */}
         <Pressable
@@ -45,13 +43,8 @@ export function HomeHeader({
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Open basin menu">
-          <Menu size={22} color={Colors.ink} strokeWidth={2.4} />
+          <Menu size={20} color={Colors.ink} strokeWidth={2.4} />
         </Pressable>
-
-        {/* Center: Raha wordmark */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.wordmark}>RAHA</Text>
-        </View>
 
         {/* Right side group: Layers toggle and Profile avatar */}
         <View style={styles.rightGroup}>
@@ -65,10 +58,18 @@ export function HomeHeader({
             accessibilityRole="button"
             accessibilityLabel={`Toggle map layer, currently ${mapType}`}>
             <Layers
-              size={20}
+              size={19}
               color={mapType === 'satellite' ? Colors.surface : Colors.ink}
               strokeWidth={2.2}
             />
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/activity' as any)}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Open activity">
+            <Bell size={19} color={Colors.ink} strokeWidth={2.2} />
           </Pressable>
 
           <Pressable
@@ -91,25 +92,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 20,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 4,
   },
   fadeBackground: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    backgroundColor: 'rgba(253, 243, 240, 0.94)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(228, 231, 236, 0.6)',
+    borderBottomColor: 'rgba(243, 217, 211, 0.8)',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 52,
+    height: 44,
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -118,8 +121,8 @@ const styles = StyleSheet.create({
     ...Shadows.card,
   },
   layersActive: {
-    backgroundColor: Colors.ink,
-    borderColor: Colors.ink,
+    backgroundColor: Colors.coral,
+    borderColor: Colors.coral,
   },
   titleContainer: {
     alignItems: 'center',
@@ -128,8 +131,8 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: Typography.family.bold,
     fontSize: 22,
-    letterSpacing: 3, // Bold, letter-spacing 3
-    color: Colors.ink,
+    letterSpacing: 3,
+    color: Colors.coralDeep,
   },
   rightGroup: {
     flexDirection: 'row',
@@ -137,20 +140,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   avatarButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#E8EEF9',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.coralSoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.you,
+    borderColor: Colors.coral,
     ...Shadows.card,
   },
   avatarText: {
     fontFamily: Typography.family.bold,
     fontSize: Typography.sizes.meta,
-    color: Colors.you,
+    color: Colors.coralDeep,
   },
   pressed: {
     opacity: 0.75,
