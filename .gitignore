@@ -68,3 +68,7 @@ Screenshot*
 
 # development signing secret (generated locally)
 .jwt-dev-secret
+
+# generated native projects (Continuous Native Generation)
+frontend/android/
+frontend/ios/
