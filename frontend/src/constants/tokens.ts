@@ -3,23 +3,27 @@
 
 export const Colors = {
   // Brand Surfaces & Atmosphere
-  firn: '#F6FAFC', // App background - crisp snowfield
-  glacierMist: '#E4EFF6', // Cards, sheets, container surfaces
+  firn: '#FDF3F0', // App background - blush
+  glacierMist: '#FBD9D2', // Cards, sheets, container surfaces (blush card)
   surfaceLowest: '#FFFFFF',
-  surfaceContainerLow: '#EDF4FF',
-  surfaceContainer: '#E2EFFF',
-  surfaceContainerHigh: '#D8EAFF',
-  surfaceContainerHighest: '#CDE5FF',
-  secondaryContainer: '#D0E5F9', // Active pill / subtle accents
+  surfaceContainerLow: '#FEF6F4',
+  surfaceContainer: '#FEEAE6',
+  surfaceContainerHigh: '#FCE0DA',
+  surfaceContainerHighest: '#FBD9D2',
+  secondaryContainer: '#FBD9D2', // Active pill / subtle accents
 
   // Typography & Foundations
-  moraineInk: '#0E2A3F', // Primary text, contrast icons, dark indicators
-  slateFog: '#5A6E7F', // Secondary text, metadata, inactive items
-  borderSubtle: '#D3E3EE', // 1px clean crisp border
+  moraineInk: '#2A1B1A', // Primary text, contrast icons, dark indicators
+  slateFog: '#6B544F', // Secondary text, metadata, inactive items
+  borderSubtle: '#F3D9D3', // 1px clean crisp border
   outlineVariant: '#C0C7D2',
 
   // Interactive & Safety Catalyst
-  meltwater: '#1E78B8', // Primary actions, user location pin, active links
+  meltwater: '#D6453A', // Primary actions (coral brand)
+  coral: '#D6453A',
+  coralDeep: '#A8322B',
+  coralSoft: '#FBD9D2',
+  onCoral: '#FFFFFF',
   cirqueTeal: '#12A59B', // Universal safety signal: verified route, shelters, clear status
   cirqueTealDark: '#00665F',
 
@@ -90,11 +94,11 @@ export const Typography = {
   scale38: 38,
 
   // Font Families
-  serif: 'InstrumentSerif_400Regular',
-  sansRegular: 'Hind_400Regular',
-  sansMedium: 'Hind_500Medium',
-  sansSemiBold: 'Hind_600SemiBold',
-  sansBold: 'Hind_700Bold',
+  serif: 'AtkinsonHyperlegible_700Bold',
+  sansRegular: 'AtkinsonHyperlegible_400Regular',
+  sansMedium: 'AtkinsonHyperlegible_400Regular',
+  sansSemiBold: 'AtkinsonHyperlegible_700Bold',
+  sansBold: 'AtkinsonHyperlegible_700Bold',
 } as const;
 
 export const Spacing = {
@@ -115,26 +119,27 @@ export const Radii = {
   button: 14,
   card: 20,
   sheet: 28,
+  pill: 9999,
   full: 9999,
 } as const;
 
 export const Shadows = {
   subtle: {
-    shadowColor: Colors.moraineInk,
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
   },
   card: {
-    shadowColor: Colors.moraineInk,
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
   },
   sheet: {
-    shadowColor: Colors.moraineInk,
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,
     shadowRadius: 20,

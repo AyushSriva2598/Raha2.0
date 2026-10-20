@@ -10,6 +10,7 @@ import {
   SosResponse,
   UserProfile,
 } from '@/types';
+import { useOfflineStore } from '@/services/offlineCache';
 import { apiClient } from '@/services/api';
 import { TRANSLATIONS, Translations, LanguageCode } from '@/i18n/translations';
 
@@ -81,9 +82,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   error: null,
 
   // Multi-Lake & Downstream Reach Initial State
-  activeLakeId: 'imja_tsho',
-  activeLake: LAKES_REGISTRY.imja_tsho,
-  activeReach: DOWNSTREAM_REACHES.imja_tsho,
+  activeLakeId: 'south_lhonak',
+  activeLake: LAKES_REGISTRY.south_lhonak,
+  activeReach: DOWNSTREAM_REACHES.south_lhonak,
   surgeMinutesRemaining: 42,
   mapViewMode: 'TACTICAL_2D',
   sosDelayMode: '3s_delay',
@@ -97,8 +98,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   sosBroadcastResult: null,
 
   setActiveLakeId: (lakeId: LakeId) => {
-    const lake = LAKES_REGISTRY[lakeId] || LAKES_REGISTRY.imja_tsho;
-    const reach = DOWNSTREAM_REACHES[lakeId] || DOWNSTREAM_REACHES.imja_tsho;
+    const lake = LAKES_REGISTRY[lakeId] || LAKES_REGISTRY.south_lhonak;
+    const reach = DOWNSTREAM_REACHES[lakeId] || DOWNSTREAM_REACHES.south_lhonak;
     set({
       activeLakeId: lakeId,
       activeLake: lake,
@@ -133,6 +134,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   init: async () => {
     try {
       set({ isLoading: true, error: null });
+      await useOfflineStore.getState().hydrate();
       const [assessment, lakes, events, safePoints, profile] = await Promise.all([
         apiClient.getActiveAssessment(),
         apiClient.getLakes(),

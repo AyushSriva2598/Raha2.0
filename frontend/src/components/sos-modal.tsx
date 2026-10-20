@@ -5,19 +5,11 @@ import {
   StyleSheet,
   Modal,
   Pressable,
-  ActivityIndicator,
 } from 'react-native';
-import { Colors, Radii, Shadows, Spacing } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import { useAppStore } from '@/store/useAppStore';
-import {
-  AlertTriangle,
-  Radio,
-  MapPin,
-  BatteryCharging,
-  CheckCircle,
-  X,
-  PhoneCall,
-} from 'lucide-react-native';
+import { Radio, MapPin, CheckCircle } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function EmergencySosModal() {
   const {
@@ -34,6 +26,7 @@ export function EmergencySosModal() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const strings = t();
+  const insets = useSafeAreaInsets();
 
   const handleDispatch = React.useCallback(async () => {
     setIsBroadcasting(true);
@@ -67,329 +60,226 @@ export function EmergencySosModal() {
   if (!isSosModalOpen) return null;
 
   const activeContacts = (userProfile?.contacts || []).filter((c) => c.isActive);
+  const initials = (name: string) =>
+    name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
 
   return (
-    <Modal visible={isSosModalOpen} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerIconContainer}>
-              <AlertTriangle size={24} color="#FFFFFF" strokeWidth={2.5} />
-            </View>
-            <Pressable style={styles.closeButton} onPress={handleClose}>
-              <X size={20} color={Colors.slateFog} />
-            </Pressable>
-          </View>
+    <Modal visible={isSosModalOpen} animationType="fade" statusBarTranslucent onRequestClose={handleClose}>
+      <View style={[styles.screen, { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24 }]}>
+        {!isDispatched ? (
+          <>
+            <Text style={styles.title} accessibilityRole="header">
+              {isBroadcasting ? strings.sos.broadcastingTitle : strings.sos.dialogTitle}
+            </Text>
 
-          {!isDispatched ? (
-            <View style={styles.contentStack}>
-              <Text style={styles.title}>{strings.sos.dialogTitle}</Text>
-              <Text style={styles.subtitle}>
-                {strings.sos.countdownSubtitle}
-              </Text>
-
-              {/* Countdown Dial */}
-              <View style={styles.countdownContainer}>
+            {/* Concentric rings with the countdown / radio at the centre */}
+            <View style={styles.stage}>
+              <View style={[styles.ring, styles.ringOuter]} />
+              <View style={[styles.ring, styles.ringMid]} />
+              <View style={styles.core} accessibilityLiveRegion="polite">
                 {isBroadcasting ? (
-                  <ActivityIndicator size="large" color={Colors.alarmRed} />
+                  <Radio size={64} color="#FFFFFF" strokeWidth={2} />
                 ) : (
-                  <View style={styles.countdownCircle}>
-                    <Text style={styles.countdownNumber}>{countdown}</Text>
-                    <Text style={styles.countdownSeconds}>seconds</Text>
-                  </View>
+                  <Text style={styles.countdownNumber}>{countdown}</Text>
                 )}
               </View>
-
-              {/* Coordinates & Telemetry Box */}
-              <View style={styles.telemetryBox}>
-                <View style={styles.telemetryItem}>
-                  <MapPin size={15} color={Colors.meltwater} />
-                  <Text style={styles.telemetryText}>
-                    Dingboche (27.892° N, 86.830° E) • 4,410m Elev
-                  </Text>
-                </View>
-                <View style={styles.telemetryItem}>
-                  <Radio size={15} color={Colors.cirqueTeal} />
-                  <Text style={styles.telemetryText}>
-                    Iridium Satellite Relay • VHF 146.52 MHz
-                  </Text>
-                </View>
-                <View style={styles.telemetryItem}>
-                  <BatteryCharging size={15} color={Colors.moraineInk} />
-                  <Text style={styles.telemetryText}>
-                    Battery: 88% • Alert Level: {alertLevel}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Receiving Contacts */}
-              <View style={styles.contactsBox}>
-                <Text style={styles.contactsHeader}>Contacts Receiving Live Pin:</Text>
-                {activeContacts.map((contact) => (
-                  <View key={contact.contactId} style={styles.contactRow}>
-                    <PhoneCall size={14} color={Colors.slateFog} />
-                    <Text style={styles.contactName}>{contact.name}</Text>
-                    <Text style={styles.contactRelation}>({contact.relation})</Text>
-                    <Text style={styles.contactPhone}>{contact.phone}</Text>
+              {isBroadcasting &&
+                activeContacts.slice(0, 3).map((c, i) => (
+                  <View key={c.contactId} style={[styles.avatar, AVATAR_POSITIONS[i]]}>
+                    <Text style={styles.avatarText}>{initials(c.name)}</Text>
                   </View>
                 ))}
-              </View>
-
-              {/* Instant Dispatch or Cancel Buttons */}
-              <View style={styles.buttonsStack}>
-                <Pressable
-                  style={({ pressed }) => [styles.instantButton, pressed && styles.pressed]}
-                  onPress={handleDispatch}>
-                  <Text style={styles.instantButtonText}>Broadcast Immediately</Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-                  onPress={handleClose}>
-                  <Text style={styles.cancelButtonText}>{strings.sos.cancelButton}</Text>
-                </Pressable>
-              </View>
             </View>
-          ) : (
-            /* Dispatched Confirmation View */
-            <View style={styles.dispatchedStack}>
-              <View style={styles.successIcon}>
-                <CheckCircle size={44} color={Colors.cirqueTeal} />
-              </View>
-              <Text style={styles.dispatchedTitle}>{strings.sos.broadcastingTitle}</Text>
-              <Text style={styles.dispatchedDesc}>{strings.sos.dispatchedNotice}</Text>
 
-              <View style={styles.dispatchedMeta}>
-                <Text style={styles.dispatchedMetaText}>✓ SMS dispatched via AWS SNS to 2 numbers</Text>
-                <Text style={styles.dispatchedMetaText}>✓ Satellite beacon active on Solukhumbu Repeater</Text>
-                <Text style={styles.dispatchedMetaText}>✓ Solukhumbu District Control acknowledged</Text>
-              </View>
+            <View style={styles.locationRow}>
+              <MapPin size={16} color="#FFFFFF" />
+              <Text style={styles.locationText}>
+                Chungthang, 1,790 m • Alert: {alertLevel}
+              </Text>
+            </View>
+            <Text style={styles.quote}>{strings.sos.countdownSubtitle}</Text>
 
+            <View style={styles.buttons}>
+              {!isBroadcasting && (
+                <Pressable
+                  style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                  onPress={handleDispatch}
+                  accessibilityRole="button">
+                  <Text style={styles.secondaryButtonText}>Send now</Text>
+                </Pressable>
+              )}
               <Pressable
-                style={({ pressed }) => [styles.doneButton, pressed && styles.pressed]}
-                onPress={handleClose}>
-                <Text style={styles.doneButtonText}>{strings.sos.doneButton}</Text>
+                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+                onPress={handleClose}
+                accessibilityRole="button">
+                <Text style={styles.cancelButtonText}>{strings.sos.cancelButton}</Text>
               </Pressable>
             </View>
-          )}
-        </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.title} accessibilityRole="header">
+              {strings.sos.broadcastingTitle}
+            </Text>
+            <View style={styles.stage}>
+              <View style={[styles.ring, styles.ringOuter]} />
+              <View style={[styles.ring, styles.ringMid]} />
+              <View style={styles.core}>
+                <CheckCircle size={72} color="#FFFFFF" strokeWidth={2} />
+              </View>
+            </View>
+            <Text style={styles.quote}>{strings.sos.dispatchedNotice}</Text>
+            <View style={styles.metaBox}>
+              <Text style={styles.metaText}>✓ SMS dispatched via AWS SNS to 2 numbers</Text>
+              <Text style={styles.metaText}>✓ Satellite beacon active on North Sikkim repeater</Text>
+              <Text style={styles.metaText}>✓ North Sikkim District Control acknowledged (demo)</Text>
+            </View>
+            <View style={styles.buttons}>
+              <Pressable
+                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+                onPress={handleClose}
+                accessibilityRole="button">
+                <Text style={styles.cancelButtonText}>{strings.sos.doneButton}</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
       </View>
     </Modal>
   );
 }
 
+const AVATAR_POSITIONS = [
+  { top: 10, right: 6 },
+  { bottom: 30, left: 0 },
+  { bottom: 6, right: 20 },
+] as const;
+
+const RING = 'rgba(255, 255, 255, 0.18)';
+
 const styles = StyleSheet.create({
-  overlay: {
+  screen: {
     flex: 1,
-    backgroundColor: 'rgba(10, 26, 40, 0.75)',
-    justifyContent: 'center',
+    backgroundColor: Colors.coralDeep,
     alignItems: 'center',
-    padding: Spacing.marginMobile,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 390,
-    backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
-    padding: Spacing.lg,
-    ...Shadows.urgent,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingHorizontal: 24,
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
-  },
-  headerIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.alarmRed,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.subtle,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.glacierMist,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentStack: {
-    gap: Spacing.md,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.alarmRed,
+    fontFamily: 'AtkinsonHyperlegible_700Bold',
+    fontSize: 28,
+    lineHeight: 36,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.slateFog,
-    textAlign: 'center',
-  },
-  countdownContainer: {
+  stage: {
+    width: 300,
+    height: 300,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 110,
   },
-  countdownCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 4,
-    borderColor: Colors.alarmRed,
-    backgroundColor: Colors.alarmRedLight,
+  ring: {
+    position: 'absolute',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: RING,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  ringOuter: { width: 300, height: 300 },
+  ringMid: { width: 230, height: 230 },
+  core: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 6,
+    borderColor: '#FFFFFF',
+    backgroundColor: Colors.coral,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countdownNumber: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: Colors.alarmRed,
-    lineHeight: 44,
+    fontFamily: 'AtkinsonHyperlegible_700Bold',
+    fontSize: 88,
+    lineHeight: 100,
+    color: '#FFFFFF',
   },
-  countdownSeconds: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.alarmRed,
-  },
-  telemetryBox: {
-    backgroundColor: Colors.firn,
-    padding: Spacing.md,
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    gap: 6,
-  },
-  telemetryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  telemetryText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.moraineInk,
-    flex: 1,
-  },
-  contactsBox: {
-    backgroundColor: Colors.glacierMist,
-    padding: Spacing.md,
-    borderRadius: Radii.lg,
-    gap: 4,
-  },
-  contactsHeader: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.moraineInk,
-    marginBottom: 4,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  contactName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.moraineInk,
-  },
-  contactRelation: {
-    fontSize: 11,
-    color: Colors.slateFog,
-  },
-  contactPhone: {
-    fontSize: 11,
-    color: Colors.slateFog,
-    marginLeft: 'auto',
-  },
-  buttonsStack: {
-    gap: 8,
-    marginTop: 4,
-  },
-  instantButton: {
-    height: 48,
-    backgroundColor: Colors.alarmRed,
-    borderRadius: Radii.button,
+  avatar: {
+    position: 'absolute',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  instantButtonText: {
+  avatarText: {
+    fontFamily: 'AtkinsonHyperlegible_700Bold',
+    fontSize: 16,
+    color: Colors.coralDeep,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  locationText: {
+    fontFamily: 'AtkinsonHyperlegible_700Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+  quote: {
+    fontFamily: 'AtkinsonHyperlegible_400Regular',
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    maxWidth: 340,
+  },
+  metaBox: {
+    width: '100%',
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    gap: 6,
+  },
+  metaText: {
+    fontFamily: 'AtkinsonHyperlegible_400Regular',
     fontSize: 14,
-    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  buttons: {
+    width: '100%',
+    gap: 12,
+  },
+  secondaryButton: {
+    minHeight: 52,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontFamily: 'AtkinsonHyperlegible_700Bold',
+    fontSize: 17,
     color: '#FFFFFF',
   },
   cancelButton: {
-    height: 44,
-    backgroundColor: Colors.glacierMist,
-    borderRadius: Radii.button,
+    minHeight: 56,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
   },
   cancelButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'AtkinsonHyperlegible_700Bold',
+    fontSize: 18,
     color: Colors.moraineInk,
-  },
-  dispatchedStack: {
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
-  },
-  successIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(18, 165, 155, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dispatchedTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.moraineInk,
-    textAlign: 'center',
-  },
-  dispatchedDesc: {
-    fontSize: 13,
-    color: Colors.slateFog,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  dispatchedMeta: {
-    backgroundColor: Colors.firn,
-    padding: Spacing.md,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    width: '100%',
-    gap: 6,
-  },
-  dispatchedMetaText: {
-    fontSize: 12,
-    color: Colors.cirqueTealDark,
-    fontWeight: '600',
-  },
-  doneButton: {
-    width: '100%',
-    height: 48,
-    backgroundColor: Colors.meltwater,
-    borderRadius: Radii.button,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  doneButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.85,

@@ -24,7 +24,19 @@ import {
   POC_LAKES,
 } from './mockData';
 
+export interface OfflineSnapshotData {
+  assessment: LakeAssessment;
+  lakes: Lake[];
+  safePoints: SafePoint[];
+  profile: UserProfile;
+  routes: NavigationRouteOption[];
+}
+
 export interface IGlacialThreatApiClient {
+  /** True only if the backend answered /health, unlike getters that silently fall back to cache. */
+  ping(): Promise<boolean>;
+  exportCache(): OfflineSnapshotData;
+  importCache(data: Partial<OfflineSnapshotData>): void;
   getActiveAssessment(zoneId?: string): Promise<LakeAssessment>;
   getLakes(): Promise<Lake[]>;
   getSafePoints(zoneId?: string): Promise<SafePoint[]>;
@@ -54,6 +66,37 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
+  }
+
+  async ping(): Promise<boolean> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(`${this.getBaseUrl()}/health`, { signal: controller.signal });
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  exportCache(): OfflineSnapshotData {
+    return {
+      assessment: this.cachedAssessment,
+      lakes: this.cachedLakes,
+      safePoints: this.cachedSafePoints,
+      profile: this.cachedProfile,
+      routes: this.cachedRoutes,
+    };
+  }
+
+  importCache(data: Partial<OfflineSnapshotData>): void {
+    if (data.assessment) this.cachedAssessment = data.assessment;
+    if (data.lakes) this.cachedLakes = data.lakes;
+    if (data.safePoints) this.cachedSafePoints = data.safePoints;
+    if (data.profile) this.cachedProfile = data.profile;
+    if (data.routes) this.cachedRoutes = data.routes;
   }
 
   private getBaseUrl(): string {
@@ -96,7 +139,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     }
   }
 
-  async getActiveAssessment(zoneId = 'dingboche-zone'): Promise<LakeAssessment> {
+  async getActiveAssessment(zoneId = 'chungthang-zone'): Promise<LakeAssessment> {
     const assessment = await this.fetchWithTimeout<LakeAssessment>(
       `/api/assessments/active?zoneId=${zoneId}`,
       {},
@@ -116,7 +159,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     return lakes;
   }
 
-  async getSafePoints(zoneId = 'dingboche-zone'): Promise<SafePoint[]> {
+  async getSafePoints(zoneId = 'chungthang-zone'): Promise<SafePoint[]> {
     const safePoints = await this.fetchWithTimeout<SafePoint[]>(
       `/api/safe-points?zoneId=${zoneId}`,
       {},

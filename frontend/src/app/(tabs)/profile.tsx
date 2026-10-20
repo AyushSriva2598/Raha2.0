@@ -8,9 +8,11 @@ import {
   Switch,
   Alert,
   Platform,
-  ActivityIndicator,
   Vibration,
 } from 'react-native';
+import { router } from 'expo-router';
+import { OfflineMapSheet } from '@/components/common/OfflineMapSheet';
+import { useOfflineStore } from '@/services/offlineCache';
 import { Colors, Radii, Shadows, Spacing } from '@/constants/tokens';
 import { useAppStore } from '@/store/useAppStore';
 import { AddEmergencyContactModal } from '@/components/add-contact-modal';
@@ -47,7 +49,8 @@ export default function ProfileScreen() {
     setSosDelayMode,
   } = useAppStore();
 
-  const [isUpdatingMaps, setIsUpdatingMaps] = useState(false);
+  const [isOfflineSheetOpen, setIsOfflineSheetOpen] = useState(false);
+  const offline = useOfflineStore();
   const [isHoldingSos, setIsHoldingSos] = useState(false);
   const [holdSecondsRemaining, setHoldSecondsRemaining] = useState(3);
   const [holdProgressPct, setHoldProgressPct] = useState(0);
@@ -120,25 +123,14 @@ export default function ProfileScreen() {
 
   const handleVhfBroadcast = () => {
     const channelName =
-      activeLake.id === 'imja_tsho'
-        ? 'Channel 07 • Khumbu SAR (146.520 MHz)'
-        : 'Channel 04 • Sikkim SAR (156.800 MHz)';
+      'Channel 04 • Sikkim SAR (156.800 MHz)';
     Alert.alert(
       'VHF Radio Simplex Relay Active',
       `Tuned to ${channelName}.\nTransceiver mode: High-power simplex (5W).\nMonitoring emergency distress hailing frequency.`
     );
   };
 
-  const handleUpdateMaps = () => {
-    setIsUpdatingMaps(true);
-    setTimeout(() => {
-      setIsUpdatingMaps(false);
-      Alert.alert(
-        'Offline Cache Synced',
-        `Successfully updated offline high-resolution elevation contours and safe escape paths for ${activeLake.name} & ${activeLake.riverBasin} (48 MB).`
-      );
-    }, 1200);
-  };
+  const handleUpdateMaps = () => setIsOfflineSheetOpen(true);
 
   const languages: { code: LanguageCode; native: string; english: string }[] = [
     { code: 'en', native: 'English', english: 'English' },
@@ -149,9 +141,9 @@ export default function ProfileScreen() {
   const primaryContacts = userProfile?.contacts || [
     {
       contactId: 'c1',
-      name: 'Pasang Lhamu Sherpa',
+      name: 'Tenzing Bhutia',
       relation: 'Sister • Field Lodge',
-      phone: '+977 9841-582910',
+      phone: '+91 9830-582910',
       isActive: true,
       statusBadge: '• Notified • Safe',
       statusType: 'safe',
@@ -195,7 +187,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.locationPill}>
-            <MapPin size={13} color="#64748B" />
+            <MapPin size={13} color="#6B544F" />
             <Text style={styles.locationPillText}>
               {activeLake.primarySettlement.name} • {activeLake.primarySettlement.elevationM.toLocaleString()}m
             </Text>
@@ -220,14 +212,16 @@ export default function ProfileScreen() {
               <Text style={styles.heroSosTitle}>BROADCAST SATELLITE SOS</Text>
               <Text style={styles.heroSosSubtitle}>
                 {sosDelayMode === '3s_delay'
-                  ? `Hold 3 sec to alert ${activeLake.country === 'Nepal' ? 'Nepal SAR' : 'Sikkim SAR'} & Kin`
-                  : `Tap to immediately alert ${activeLake.country === 'Nepal' ? 'Nepal SAR' : 'Sikkim SAR'} & Kin`}
+                  ? 'Hold 3 sec to alert Sikkim SAR & Kin'
+                  : 'Tap to immediately alert Sikkim SAR & Kin'}
               </Text>
             </View>
           </View>
 
           {/* Big Circular Pressable SOS Trigger Button */}
           <View style={styles.sosTriggerContainer}>
+            <View pointerEvents="none" style={styles.sosRingOuter} />
+            <View pointerEvents="none" style={styles.sosRingInner} />
             <Pressable
               style={({ pressed }) => [
                 styles.sosBigCircle,
@@ -289,7 +283,7 @@ export default function ProfileScreen() {
                   sosDelayMode === '3s_delay' && styles.guardSegmentActive,
                 ]}
                 onPress={() => setSosDelayMode('3s_delay')}>
-                <Clock size={12} color={sosDelayMode === '3s_delay' ? '#FFFFFF' : '#94A3B8'} />
+                <Clock size={12} color={sosDelayMode === '3s_delay' ? '#FFFFFF' : '#7A625E'} />
                 <Text
                   style={[
                     styles.guardSegmentText,
@@ -308,9 +302,7 @@ export default function ProfileScreen() {
             <View style={styles.vhfTitleRow}>
               <RadioReceiver size={18} color={Colors.moraineInk} strokeWidth={2.2} />
               <Text style={styles.vhfCardTitle}>
-                {activeLake.id === 'imja_tsho'
-                  ? 'CHANNEL 07 • KHUMBU SAR (146.520 MHZ)'
-                  : 'CHANNEL 04 • SIKKIM SAR (156.800 MHZ)'}
+                CHANNEL 04 • SIKKIM SAR (156.800 MHZ)
               </Text>
             </View>
             <View style={styles.activeBandBadge}>
@@ -327,7 +319,7 @@ export default function ProfileScreen() {
             onPress={handleVhfBroadcast}>
             <Mic size={15} color="#FFFFFF" strokeWidth={2.4} />
             <Text style={styles.vhfActionText}>
-              Listen / Broadcast on VHF {activeLake.id === 'imja_tsho' ? '146.520' : '156.800'} MHz
+              Listen / Broadcast on VHF 156.800 MHz
             </Text>
           </Pressable>
         </View>
@@ -344,10 +336,17 @@ export default function ProfileScreen() {
             <Pressable
               style={({ pressed }) => [styles.addKinButton, pressed && styles.pressed]}
               onPress={() => openAddContactModal(true)}>
-              <UserPlus size={14} color="#2563EB" />
+              <UserPlus size={14} color="#D6453A" />
               <Text style={styles.addKinButtonText}>+ Add Kin</Text>
             </Pressable>
           </View>
+
+          <Pressable
+            onPress={() => router.push('/contacts' as any)}
+            style={({ pressed }) => [styles.allContactsLink, pressed && styles.pressed]}
+            accessibilityRole="link">
+            <Text style={styles.allContactsText}>View all contacts</Text>
+          </Pressable>
 
           {/* Kin Cards List */}
           <View style={styles.kinList}>
@@ -394,7 +393,7 @@ export default function ProfileScreen() {
                     value={contact.isActive}
                     onValueChange={() => toggleContact(contact.contactId)}
                     trackColor={{
-                      false: '#CBD5E1',
+                      false: '#F3D9D3',
                       true: '#10B981',
                     }}
                   />
@@ -408,7 +407,7 @@ export default function ProfileScreen() {
         <View style={styles.settingsSectionCard}>
           <View style={styles.settingsCardHeader}>
             <View style={styles.settingsTitleRow}>
-              <Languages size={18} color="#2563EB" />
+              <Languages size={18} color="#D6453A" />
               <Text style={styles.settingsTitle}>Language & Voice Alerts</Text>
             </View>
             <Text style={styles.settingsSubtitle}>Choose regional alert dialect</Text>
@@ -439,14 +438,16 @@ export default function ProfileScreen() {
           <View style={styles.prefItem}>
             <View style={styles.prefItemLeft}>
               <View style={styles.prefIconBox}>
-                <DownloadCloud size={18} color="#2563EB" />
+                <DownloadCloud size={18} color="#D6453A" />
               </View>
               <View>
-                <Text style={styles.prefTitle}>Offline Topo & Terrain Cache</Text>
+                <Text style={styles.prefTitle}>Offline valley data</Text>
                 <View style={styles.offlineMetaRow}>
-                  <CheckCircle2 size={12} color="#10B981" />
+                  <CheckCircle2 size={12} color={offline.status === 'ready' ? '#10B981' : '#7A625E'} />
                   <Text style={styles.offlineMetaText}>
-                    48 MB synced • Offline routing ready
+                    {offline.status === 'ready' && offline.lastUpdated
+                      ? `Saved ${new Date(offline.lastUpdated).toLocaleDateString()} • ${offline.sizeKb} KB`
+                      : 'Not downloaded yet'}
                   </Text>
                 </View>
               </View>
@@ -454,11 +455,9 @@ export default function ProfileScreen() {
             <Pressable
               style={({ pressed }) => [styles.prefActionBtn, pressed && styles.pressed]}
               onPress={handleUpdateMaps}>
-              {isUpdatingMaps ? (
-                <ActivityIndicator size="small" color="#0F172A" />
-              ) : (
-                <Text style={styles.prefActionBtnText}>Sync Cache</Text>
-              )}
+              <Text style={styles.prefActionBtnText}>
+                {offline.status === 'ready' ? 'Update' : 'Download'}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -473,10 +472,10 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.profileDetails}>
               <Text style={styles.profileName}>
-                {userProfile?.name || 'Pasang Lhamu Sherpa'}
+                {userProfile?.name || 'Tenzing Bhutia'}
               </Text>
               <Text style={styles.profileSub}>
-                {userProfile?.homeLocationName || 'Dingboche, Solukhumbu'} • {userProfile?.phone || '+977 9841-582910'}
+                {userProfile?.homeLocationName || 'Chungthang, North Sikkim'} • {userProfile?.phone || '+91 9830-582910'}
               </Text>
             </View>
           </View>
@@ -488,15 +487,27 @@ export default function ProfileScreen() {
 
       {/* Global Modals */}
       <AddEmergencyContactModal />
+      <OfflineMapSheet visible={isOfflineSheetOpen} onClose={() => setIsOfflineSheetOpen(false)} />
       <EmergencySosModal />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  allContactsLink: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+  },
+  allContactsText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.coralDeep,
+    textDecorationLine: 'underline',
+  },
   outerContainer: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF3F0',
   },
   container: {
     flex: 1,
@@ -518,7 +529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     borderRadius: Radii.full,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -533,7 +544,7 @@ const styles = StyleSheet.create({
   satelliteStatusText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#2A1B1A',
     letterSpacing: 0.5,
   },
   locationPill: {
@@ -541,7 +552,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     borderRadius: Radii.full,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -551,7 +562,7 @@ const styles = StyleSheet.create({
   locationPillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#475569',
+    color: '#5E4A47',
   },
 
   // SAR Banner
@@ -577,8 +588,8 @@ const styles = StyleSheet.create({
 
   // Hero SOS Card
   heroSosCard: {
-    backgroundColor: Colors.emergencyRed,
-    borderRadius: 20,
+    backgroundColor: Colors.coralDeep,
+    borderRadius: 28,
     padding: 18,
     marginBottom: 14,
     ...Shadows.card,
@@ -617,12 +628,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 12,
+    minHeight: 208,
+  },
+  sosRingOuter: {
+    position: 'absolute',
+    width: 208,
+    height: 208,
+    borderRadius: 104,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  sosRingInner: {
+    position: 'absolute',
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
   },
   sosBigCircle: {
     width: 130,
     height: 130,
     borderRadius: 65,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: Colors.coral,
     borderWidth: 4,
     borderColor: '#FFFFFF',
     alignItems: 'center',
@@ -714,7 +740,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     padding: 16,
     marginBottom: 14,
     ...Shadows.card,
@@ -734,7 +760,7 @@ const styles = StyleSheet.create({
   vhfCardTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   activeBandBadge: {
     backgroundColor: '#DCFCE7',
@@ -749,7 +775,7 @@ const styles = StyleSheet.create({
   },
   vhfCardDesc: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#6B544F',
     lineHeight: 17,
     marginBottom: 12,
   },
@@ -758,7 +784,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#2A1B1A',
     borderRadius: 12,
     paddingVertical: 11,
     paddingHorizontal: 14,
@@ -774,7 +800,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     padding: 16,
     marginBottom: 14,
     ...Shadows.card,
@@ -788,18 +814,18 @@ const styles = StyleSheet.create({
   kinSectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   kinSectionSubtitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6B544F',
     marginTop: 2,
   },
   addKinButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FEEAE6',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: Radii.full,
@@ -807,7 +833,7 @@ const styles = StyleSheet.create({
   addKinButtonText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#D6453A',
   },
   kinList: {
     gap: 10,
@@ -815,10 +841,10 @@ const styles = StyleSheet.create({
   kinCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF3F0',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     padding: 12,
     gap: 12,
   },
@@ -826,7 +852,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#2A1B1A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -847,13 +873,13 @@ const styles = StyleSheet.create({
   kinName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   kinStatusBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: Radii.full,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#F3D9D3',
   },
   kinStatusBadgeSafe: {
     backgroundColor: '#DCFCE7',
@@ -864,7 +890,7 @@ const styles = StyleSheet.create({
   kinStatusText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#475569',
+    color: '#5E4A47',
   },
   kinStatusTextSafe: {
     color: '#15803D',
@@ -874,12 +900,12 @@ const styles = StyleSheet.create({
   },
   kinRelation: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6B544F',
     marginTop: 1,
   },
   kinPhone: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#7A625E',
     marginTop: 1,
   },
 
@@ -888,7 +914,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     padding: 16,
     marginBottom: 14,
     ...Shadows.card,
@@ -904,11 +930,11 @@ const styles = StyleSheet.create({
   settingsTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   settingsSubtitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6B544F',
     marginTop: 2,
   },
   languageTabsContainer: {
@@ -917,29 +943,29 @@ const styles = StyleSheet.create({
   },
   langTab: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF3F0',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     paddingVertical: 10,
     alignItems: 'center',
   },
   langTabActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#2563EB',
+    backgroundColor: '#FEEAE6',
+    borderColor: '#D6453A',
   },
   langNative: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   langEnglish: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6B544F',
     marginTop: 2,
   },
   langTextActive: {
-    color: '#2563EB',
+    color: '#D6453A',
   },
 
   prefItem: {
@@ -957,14 +983,14 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FEEAE6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   prefTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   offlineMetaRow: {
     flexDirection: 'row',
@@ -974,10 +1000,10 @@ const styles = StyleSheet.create({
   },
   offlineMetaText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6B544F',
   },
   prefActionBtn: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FEEAE6',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: Radii.sm,
@@ -985,7 +1011,7 @@ const styles = StyleSheet.create({
   prefActionBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
 
   // Profile Meta Card
@@ -993,7 +1019,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F3D9D3',
     padding: 14,
     marginBottom: 14,
     ...Shadows.card,
@@ -1007,7 +1033,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#2A1B1A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1022,11 +1048,11 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2A1B1A',
   },
   profileSub: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6B544F',
     marginTop: 2,
   },
 

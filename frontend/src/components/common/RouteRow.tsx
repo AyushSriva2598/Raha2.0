@@ -120,30 +120,31 @@ export function RouteRow({
 
 const styles = StyleSheet.create({
   container: {
-    height: 64,
-    borderRadius: 18,
+    minHeight: 60,
+    borderRadius: 16,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 6,
   },
   containerSelected: {
-    borderColor: Colors.safe,
-    backgroundColor: Colors.safeTintAlt,
+    borderColor: Colors.coral,
+    backgroundColor: Colors.coralTint,
   },
   pressed: {
     opacity: 0.9,
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   iconSafe: {
     backgroundColor: Colors.safeTint,

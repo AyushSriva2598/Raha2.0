@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Home,
   Navigation,
-  Activity as ActivityIcon,
+  ShieldCheck,
   User,
 } from 'lucide-react-native';
 import { Colors, Typography } from '@/constants/theme';
@@ -25,7 +25,7 @@ export function TabBar() {
 
   const isHome = pathname === '/' || pathname === '/index' || pathname === '';
   const isMap = pathname.includes('/map');
-  const isActivity = pathname.includes('/activity');
+  const isSafety = pathname.includes('/safety');
   const isProfile = pathname.includes('/profile');
 
   const handleSosTrigger = () => {
@@ -46,7 +46,7 @@ export function TabBar() {
           accessibilityLabel="Home tab">
           <Home
             size={22}
-            color={isHome ? Colors.ink : Colors.text3}
+            color={isHome ? Colors.coral : Colors.text3}
             strokeWidth={isHome ? 2.5 : 1.8}
           />
           <Text style={[styles.tabLabel, isHome && styles.tabLabelActive]}>
@@ -63,7 +63,7 @@ export function TabBar() {
           accessibilityLabel="Map tab">
           <Navigation
             size={22}
-            color={isMap ? Colors.ink : Colors.text3}
+            color={isMap ? Colors.coral : Colors.text3}
             strokeWidth={isMap ? 2.5 : 1.8}
           />
           <Text style={[styles.tabLabel, isMap && styles.tabLabelActive]}>
@@ -80,20 +80,20 @@ export function TabBar() {
           />
         </View>
 
-        {/* Tab 4: Activity */}
+        {/* Tab 4: Safety tips */}
         <Pressable
-          onPress={() => router.replace('/activity' as any)}
+          onPress={() => router.replace('/safety' as any)}
           style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}
           accessibilityRole="tab"
-          accessibilityState={{ selected: isActivity }}
-          accessibilityLabel="Activity tab">
-          <ActivityIcon
+          accessibilityState={{ selected: isSafety }}
+          accessibilityLabel="Safety tab">
+          <ShieldCheck
             size={22}
-            color={isActivity ? Colors.ink : Colors.text3}
-            strokeWidth={isActivity ? 2.5 : 1.8}
+            color={isSafety ? Colors.coral : Colors.text3}
+            strokeWidth={isSafety ? 2.5 : 1.8}
           />
-          <Text style={[styles.tabLabel, isActivity && styles.tabLabelActive]}>
-            Activity
+          <Text style={[styles.tabLabel, isSafety && styles.tabLabelActive]}>
+            Safety
           </Text>
         </Pressable>
 
@@ -106,7 +106,7 @@ export function TabBar() {
           accessibilityLabel="Profile tab">
           <User
             size={22}
-            color={isProfile ? Colors.ink : Colors.text3}
+            color={isProfile ? Colors.coral : Colors.text3}
             strokeWidth={isProfile ? 2.5 : 1.8}
           />
           <Text style={[styles.tabLabel, isProfile && styles.tabLabelActive]}>
@@ -121,9 +121,11 @@ export function TabBar() {
 const styles = StyleSheet.create({
   wrapper: {
     backgroundColor: Colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    shadowColor: Colors.ink,
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     fontFamily: Typography.family.bold,
-    color: Colors.ink, // Active tab ink and bold
+    color: Colors.coral, // Active tab coral and bold
   },
   centerSosSlot: {
     width: 78,

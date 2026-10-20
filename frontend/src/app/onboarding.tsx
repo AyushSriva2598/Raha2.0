@@ -27,7 +27,7 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(1);
   const [phone, setPhone] = useState('+977 9841-582910');
   const otp = ['4', '8', '2', '0', '1', '9'];
-  const selectedZone = 'Dingboche Valley (4,410m)';
+  const selectedZone = 'Chungthang, North Sikkim (1,790m)';
 
   const handleNext = () => {
     if (step < 4) {
@@ -111,7 +111,7 @@ export default function OnboardingScreen() {
               {[
                 { code: 'en', name: 'English', sub: 'Standard International' },
                 { code: 'hi', name: 'हिन्दी (Hindi)', sub: 'उत्तर भारत एवं सीमावर्ती' },
-                { code: 'ne', name: 'नेपाली (Nepali)', sub: 'खम्बु तथा कोशी उपत्यका' },
+                { code: 'ne', name: 'नेपाली (Nepali)', sub: 'उत्तर सिक्किम र तिस्ता उपत्यका' },
               ].map((lang) => {
                 const isSelected = language === lang.code;
                 return (
@@ -157,7 +157,7 @@ export default function OnboardingScreen() {
               <View style={styles.zoneTextStack}>
                 <Text style={styles.zoneTitle}>{selectedZone}</Text>
                 <Text style={styles.zoneSub}>
-                  Dudh Koshi River Basin • 7.2 km downstream from Imja Tsho
+                  Teesta River Basin • downstream of South Lhonak Lake
                 </Text>
               </View>
             </View>
@@ -201,7 +201,7 @@ export default function OnboardingScreen() {
               <View style={styles.permissionTextStack}>
                 <Text style={styles.permissionTitle}>SOS Kin Dispatch</Text>
                 <Text style={styles.permissionSub}>
-                  2 Emergency Contacts linked (Sita Sherpa, Meena Sherpa).
+                  2 Emergency Contacts linked (Pema Bhutia, Sonam Lepcha).
                 </Text>
               </View>
               <View style={styles.checkPill}>
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: Colors.glacierMist,
-    borderRadius: Radii.button,
+    borderRadius: Radii.pill,
     paddingHorizontal: 14,
     height: 52,
     borderWidth: 1,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   langOptionCardSelected: {
-    backgroundColor: '#EDF4FF',
+    backgroundColor: '#FEEAE6',
     borderColor: Colors.meltwater,
   },
   langOptionTitle: {
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   nextButton: {
     height: 56,
     backgroundColor: Colors.meltwater,
-    borderRadius: Radii.button,
+    borderRadius: Radii.pill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -5,7 +5,7 @@ import { Colors, Typography, Radii } from '@/constants/theme';
 export interface PillProps {
   label: string;
   icon?: React.ReactNode;
-  variant?: 'danger' | 'watch' | 'safe' | 'neutral' | 'active' | 'white' | 'low';
+  variant?: 'danger' | 'watch' | 'safe' | 'neutral' | 'active' | 'white' | 'low' | 'coral';
   size?: 'sm' | 'md' | 'lg';
   selected?: boolean;
   onPress?: () => void;
@@ -37,6 +37,8 @@ export function Pill({
         return styles.activeContainer;
       case 'white':
         return styles.whiteContainer;
+      case 'coral':
+        return selected ? styles.coralSelected : styles.coralContainer;
       case 'neutral':
       default:
         return selected ? styles.activeContainer : styles.neutralContainer;
@@ -57,6 +59,8 @@ export function Pill({
         return styles.activeText;
       case 'white':
         return styles.whiteText;
+      case 'coral':
+        return selected ? styles.activeText : styles.coralText;
       case 'neutral':
       default:
         return selected ? styles.activeText : styles.neutralText;
@@ -137,8 +141,19 @@ const styles = StyleSheet.create({
     color: Colors.text2,
   },
   activeContainer: {
-    backgroundColor: Colors.ink,
-    borderColor: Colors.ink,
+    backgroundColor: Colors.coral,
+    borderColor: Colors.coral,
+  },
+  coralContainer: {
+    backgroundColor: 'transparent',
+    borderColor: Colors.coral,
+  },
+  coralSelected: {
+    backgroundColor: Colors.coral,
+    borderColor: Colors.coral,
+  },
+  coralText: {
+    color: Colors.coralDeep,
   },
   activeText: {
     color: Colors.surface,

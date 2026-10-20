@@ -7,12 +7,19 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   // Core UI tokens
-  ink: '#14213D',          // text, icons
-  text2: '#475467',        // secondary text
-  text3: '#667085',        // tertiary, timestamps
-  bg: '#F4F6F8',           // page background (Activity, Profile)
+  ink: '#2A1B1A',          // text, icons (warm near-black)
+  text2: '#5E4A47',        // secondary text
+  text3: '#7A625E',        // tertiary, timestamps
+  bg: '#FDF3F0',           // page background: blush
   surface: '#FFFFFF',      // sheets, cards
-  border: '#E4E7EC',       // hairlines
+  border: '#F3D9D3',       // hairlines
+
+  // Brand: coral on blush (alert tiers below stay separate and always carry label + icon)
+  coral: '#D6453A',        // filled buttons, active tab, chips
+  coralDeep: '#A8322B',    // pressed, full-screen SOS gradient end
+  coralSoft: '#FBD9D2',    // blush cards, selected chips
+  coralTint: '#FEEAE6',    // quiet fills
+  onCoral: '#FFFFFF',
 
   // Safety & Hazard tokens
   danger: '#C62828',       // alerts, SOS, banner
@@ -55,7 +62,7 @@ export const Colors = {
   light: {
     text: '#14213D',
     background: '#FFFFFF',
-    backgroundElement: '#F4F6F8',
+    backgroundElement: '#FDF3F0',
     backgroundSelected: '#E3F4EA',
     textSecondary: '#475467',
   },
@@ -145,6 +152,7 @@ export const Radii = {
   card: 20,
   cardLarge: 24,
   button: 20,
+  pill: 9999,
   sheet: 28, // sheets radius 28 top
 } as const;
 
@@ -169,21 +177,21 @@ export const Spacing = {
 
 export const Shadows = {
   sheet: {
-    shadowColor: '#14213D',
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.2,
     shadowRadius: 22,
     elevation: 12,
   },
   card: {
-    shadowColor: '#14213D',
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
   button: {
-    shadowColor: '#14213D',
+    shadowColor: '#7A2A22',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
     shadowRadius: 6,

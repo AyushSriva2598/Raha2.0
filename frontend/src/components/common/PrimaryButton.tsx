@@ -14,7 +14,7 @@ import { Colors, Typography, Radii, Shadows } from '@/constants/theme';
 export interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'safe' | 'danger' | 'watch' | 'outline' | 'neutral';
+  variant?: 'filled' | 'outlineCoral' | 'safe' | 'danger' | 'watch' | 'outline' | 'neutral';
   icon?: React.ReactNode;
   disabled?: boolean;
   loading?: boolean;
@@ -26,7 +26,7 @@ export interface PrimaryButtonProps {
 export function PrimaryButton({
   title,
   onPress,
-  variant = 'safe',
+  variant = 'filled',
   icon,
   disabled = false,
   loading = false,
@@ -36,6 +36,10 @@ export function PrimaryButton({
 }: PrimaryButtonProps) {
   const getVariantStyle = () => {
     switch (variant) {
+      case 'filled':
+        return styles.filled;
+      case 'outlineCoral':
+        return styles.outlineCoral;
       case 'danger':
         return styles.danger;
       case 'watch':
@@ -45,8 +49,9 @@ export function PrimaryButton({
       case 'neutral':
         return styles.neutral;
       case 'safe':
-      default:
         return styles.safe;
+      default:
+        return styles.filled;
     }
   };
 
@@ -56,6 +61,8 @@ export function PrimaryButton({
         return styles.watchText;
       case 'outline':
         return styles.outlineText;
+      case 'outlineCoral':
+        return styles.outlineCoralText;
       case 'danger':
       case 'safe':
       case 'neutral':
@@ -72,7 +79,7 @@ export function PrimaryButton({
         styles.base,
         { height, minHeight: 48 },
         getVariantStyle(),
-        Shadows.button,
+        variant === 'outlineCoral' ? null : Shadows.button,
         disabled && styles.disabled,
         pressed && styles.pressed,
         style,
@@ -96,7 +103,7 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: Radii.button,
+    borderRadius: Radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -114,6 +121,17 @@ const styles = StyleSheet.create({
     fontFamily: Typography.family.bold,
     fontSize: Typography.sizes.bodyLarge,
     letterSpacing: 0.2,
+  },
+  filled: {
+    backgroundColor: Colors.coral,
+  },
+  outlineCoral: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Colors.coral,
+  },
+  outlineCoralText: {
+    color: Colors.coralDeep,
   },
   safe: {
     backgroundColor: Colors.safe,

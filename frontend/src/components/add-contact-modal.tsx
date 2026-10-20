@@ -64,7 +64,7 @@ export function AddEmergencyContactModal() {
             <Text style={styles.label}>Full Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Dawa Sherpa"
+              placeholder="e.g. Dorjee Tamang"
               placeholderTextColor={Colors.slateFog}
               value={name}
               onChangeText={setName}
