@@ -90,6 +90,15 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
       accessibilityValue={{ text: `${current.date}, ${current.level ? GLOF_LEVEL_LABEL[current.level] : 'no level'}` }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onA11y}>
+      {width > 0 &&
+        events.slice(0, 1).map((ev) => (
+          <Text
+            key={ev.date}
+            numberOfLines={1}
+            style={[styles.eventLabel, { left: Math.min(Math.max(xOf(ev.date) - 60, 0), Math.max(0, width - 120)) }]}>
+            {ev.label}
+          </Text>
+        ))}
       <View style={styles.touch} {...pan.panHandlers}>
         <View ref={trackRef} style={styles.track} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
           {width > 0 &&
@@ -132,7 +141,8 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1 },
+  wrap: { flex: 1, paddingTop: 16 },
+  eventLabel: { position: 'absolute', top: 0, width: 120, textAlign: 'center', fontFamily: Typography.family.regular, fontSize: 11, color: Colors.dangerDark },
   touch: { height: 44, justifyContent: 'center' },
   track: { height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'visible', backgroundColor: '#EAD9D4', justifyContent: 'center' },
   event: { position: 'absolute', top: -5, width: 2, height: TRACK_H + 10, backgroundColor: Colors.ink, borderRadius: 1 },
