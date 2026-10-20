@@ -64,6 +64,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="terrain" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen
             name="onboarding"
             options={{ presentation: 'modal', headerShown: false }}
