@@ -1,5 +1,22 @@
-import * as SecureStore from 'expo-secure-store';
 import type { UserProfile } from '@/types';
+
+type SecureStoreModule = typeof import('expo-secure-store');
+
+// expo-secure-store is a native module: it only exists in a dev build made after it was installed.
+// Loading it must never crash the app, so it is required lazily and the session falls back to memory
+// (signing in works, but the session is lost when the app restarts) until the build includes it.
+let secureStore: SecureStoreModule | null | undefined;
+function keychain(): SecureStoreModule | null {
+  if (secureStore !== undefined) return secureStore;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    secureStore = require('expo-secure-store') as SecureStoreModule;
+  } catch {
+    secureStore = null;
+    console.log('[session] expo-secure-store is not in this build; the session is kept in memory only.');
+  }
+  return secureStore;
+}
 
 // The session token lives in the platform keychain (expo-secure-store), never in plain storage.
 const TOKEN_KEY = 'raha.session.token';
@@ -26,7 +43,7 @@ export function authHeaders(): Record<string, string> {
 
 export async function loadSavedToken(): Promise<string | null> {
   try {
-    token = await SecureStore.getItemAsync(TOKEN_KEY);
+    token = (await keychain()?.getItemAsync(TOKEN_KEY)) ?? null;
   } catch {
     token = null;
   }
@@ -36,7 +53,7 @@ export async function loadSavedToken(): Promise<string | null> {
 export async function saveToken(value: string): Promise<void> {
   token = value;
   try {
-    await SecureStore.setItemAsync(TOKEN_KEY, value);
+    await keychain()?.setItemAsync(TOKEN_KEY, value);
   } catch {
     // keep the in-memory session even if the keychain is unavailable
   }
@@ -46,7 +63,7 @@ export async function clearToken(): Promise<void> {
   token = null;
   currentUser = null;
   try {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await keychain()?.deleteItemAsync(TOKEN_KEY);
   } catch {
     // nothing to delete
   }
