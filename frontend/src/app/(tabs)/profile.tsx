@@ -13,6 +13,8 @@ import {
 import { router } from 'expo-router';
 import { OfflineMapSheet } from '@/components/common/OfflineMapSheet';
 import { useOfflineStore } from '@/services/offlineCache';
+import { useAuthStore } from '@/services/authStore';
+import type { SosContact } from '@/types';
 import { Colors, Radii, Shadows, Spacing } from '@/constants/tokens';
 import { useAppStore } from '@/store/useAppStore';
 import { AddEmergencyContactModal } from '@/components/add-contact-modal';
@@ -47,7 +49,10 @@ export default function ProfileScreen() {
     triggerEmergencySos,
     sosDelayMode,
     setSosDelayMode,
+    t,
   } = useAppStore();
+  const strings = t();
+  const signOut = useAuthStore((st) => st.signOut);
 
   const [isOfflineSheetOpen, setIsOfflineSheetOpen] = useState(false);
   const offline = useOfflineStore();
@@ -138,35 +143,8 @@ export default function ProfileScreen() {
     { code: 'ne', native: 'नेपाली', english: 'Nepali' },
   ];
 
-  const primaryContacts = userProfile?.contacts || [
-    {
-      contactId: 'c1',
-      name: 'Tenzing Bhutia',
-      relation: 'Sister • Field Lodge',
-      phone: '+91 9830-582910',
-      isActive: true,
-      statusBadge: '• Notified • Safe',
-      statusType: 'safe',
-    },
-    {
-      contactId: 'c2',
-      name: 'Meena Karki',
-      relation: 'Spouse • Kathmandu Relay',
-      phone: '+977 9812-449102',
-      isActive: true,
-      statusBadge: '• Ready to Relay',
-      statusType: 'ready',
-    },
-    {
-      contactId: 'c3',
-      name: 'Dawa Tenzing',
-      relation: 'Trek Guide • Upper Trail',
-      phone: '+977 9803-118492',
-      isActive: true,
-      statusBadge: '• Notified • Ascending',
-      statusType: 'safe',
-    },
-  ];
+  // Only the signed-in user's own contacts. Nothing is pre-filled.
+  const primaryContacts = (userProfile?.contacts ?? []) as (SosContact & { statusBadge?: string; statusType?: string })[];
 
   return (
     <View style={styles.outerContainer}>
@@ -467,19 +445,26 @@ export default function ProfileScreen() {
           <View style={styles.profileMetaHeader}>
             <View style={styles.profileAvatar}>
               <Text style={styles.profileAvatarText}>
-                {userProfile?.name?.charAt(0) || 'P'}
+                {userProfile?.name?.charAt(0)?.toUpperCase() || '–'}
               </Text>
             </View>
             <View style={styles.profileDetails}>
               <Text style={styles.profileName}>
-                {userProfile?.name || 'Tenzing Bhutia'}
+                {userProfile?.name || userProfile?.phone || ''}
               </Text>
               <Text style={styles.profileSub}>
-                {userProfile?.homeLocationName || 'Chungthang, North Sikkim'} • {userProfile?.phone || '+91 9830-582910'}
+                {[userProfile?.homeLocationName, userProfile?.phone].filter(Boolean).join(' • ')}
               </Text>
             </View>
           </View>
         </View>
+
+        <Pressable
+          onPress={() => signOut()}
+          style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}
+          accessibilityRole="button">
+          <Text style={styles.signOutText}>{strings.profile.signOut}</Text>
+        </Pressable>
 
         {__DEV__ && <BackendCheck />}
 
@@ -494,6 +479,21 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  signOutButton: {
+    minHeight: 52,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: Colors.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.coralDeep,
+  },
   allContactsLink: {
     minHeight: 44,
     justifyContent: 'center',

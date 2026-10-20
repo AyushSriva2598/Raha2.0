@@ -59,7 +59,9 @@ export const useOfflineStore = create<OfflineState>((set) => ({
       const raw = await storage.getItem(STORAGE_KEY);
       if (!raw) return;
       const snap = JSON.parse(raw) as StoredSnapshot;
-      apiClient.importCache(snap);
+      const { profile: _ignored, ...shared } = snap; // never restore someone's profile from disk
+      void _ignored;
+      apiClient.importCache(shared);
       set({
         status: 'ready',
         lastUpdated: snap.savedAt,
@@ -86,7 +88,9 @@ export const useOfflineStore = create<OfflineState>((set) => ({
         apiClient.getUserProfile(),
       ]);
       const savedAt = new Date().toISOString();
-      const raw = JSON.stringify({ ...apiClient.exportCache(), savedAt } satisfies StoredSnapshot);
+      const { profile: _own, ...shared } = apiClient.exportCache(); // the profile is per account, not saved here
+      void _own;
+      const raw = JSON.stringify({ ...shared, savedAt } satisfies StoredSnapshot);
       const storage = getStorage();
       if (storage) await storage.setItem(STORAGE_KEY, raw);
       set({

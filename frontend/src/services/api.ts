@@ -14,15 +14,31 @@ import {
   UserProfile,
 } from '@/types';
 import Constants from 'expo-constants';
+import { authHeaders, getCurrentUser, notifyUnauthorized } from '@/services/session';
 import { Platform } from 'react-native';
 import {
   ASSESSMENTS_BY_LEVEL,
   MOCK_EVENT_LOGS,
   MOCK_NAVIGATION_ROUTES,
   MOCK_SAFE_POINTS,
-  MOCK_USER_PROFILE,
   POC_LAKES,
 } from './mockData';
+
+// A blank profile, used only until the signed-in user's own profile has loaded. Never fake data.
+const EMPTY_PROFILE: UserProfile = {
+  userId: '',
+  name: '',
+  phone: '',
+  role: 'resident',
+  homeZoneId: '',
+  homeLocationName: '',
+  elevationM: 0,
+  language: 'en',
+  smsFallbackEnabled: true,
+  offlineMapsCached: false,
+  cachedMapSizeMB: 0,
+  contacts: [],
+};
 
 export interface OfflineSnapshotData {
   assessment: LakeAssessment;
@@ -36,6 +52,7 @@ export interface IGlacialThreatApiClient {
   /** True only if the backend answered /health, unlike getters that silently fall back to cache. */
   ping(): Promise<boolean>;
   exportCache(): OfflineSnapshotData;
+  resetUserData(): void;
   importCache(data: Partial<OfflineSnapshotData>): void;
   getActiveAssessment(zoneId?: string): Promise<LakeAssessment>;
   getLakes(): Promise<Lake[]>;
@@ -61,7 +78,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
   private cachedAssessment: LakeAssessment = { ...ASSESSMENTS_BY_LEVEL.CLEAR };
   private cachedLakes: Lake[] = [...POC_LAKES];
   private cachedSafePoints: SafePoint[] = [...MOCK_SAFE_POINTS];
-  private cachedProfile: UserProfile = { ...MOCK_USER_PROFILE };
+  private cachedProfile: UserProfile = { ...EMPTY_PROFILE, contacts: [] };
   private cachedRoutes: NavigationRouteOption[] = [...MOCK_NAVIGATION_ROUTES];
 
   constructor(baseUrl?: string) {
@@ -122,10 +139,12 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
+          ...authHeaders(),
           ...(options.headers || {}),
         },
       });
 
+      if (res.status === 401) notifyUnauthorized();
       if (!res.ok) {
         throw new Error(`HTTP error ${res.status} from ${endpoint}`);
       }
@@ -179,7 +198,14 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     );
   }
 
+  /** Forget the previous user's profile when someone signs in or out. */
+  resetUserData(): void {
+    this.cachedProfile = { ...EMPTY_PROFILE, contacts: [] };
+  }
+
   async getUserProfile(): Promise<UserProfile> {
+    const signedIn = getCurrentUser();
+    if (signedIn && signedIn.userId !== this.cachedProfile.userId) this.cachedProfile = { ...signedIn, contacts: [...signedIn.contacts] };
     const profile = await this.fetchWithTimeout<UserProfile>(
       '/api/user/profile',
       {},
@@ -194,7 +220,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
       const activeBase = this.getBaseUrl();
       const res = await fetch(`${activeBase}/api/user/profile`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(updates),
       });
       if (res.ok) {
@@ -214,7 +240,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
       const activeBase = this.getBaseUrl();
       const res = await fetch(`${activeBase}/api/user/contacts/${contactId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ isActive }),
       });
       if (res.ok) {
@@ -236,7 +262,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
       const activeBase = this.getBaseUrl();
       const res = await fetch(`${activeBase}/api/user/contacts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(contactData),
       });
       if (res.ok) {
@@ -260,7 +286,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
       const activeBase = this.getBaseUrl();
       const res = await fetch(`${activeBase}/api/alerts/sos-broadcast`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -283,7 +309,7 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
       const activeBase = this.getBaseUrl();
       const res = await fetch(`${activeBase}/api/scenario/set-level`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ level }),
       });
       if (res.ok) {

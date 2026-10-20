@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreenOverlay } from '@/components/splash-screen';
 import { useAppStore } from '@/store/useAppStore';
+import { useAuthStore } from '@/services/authStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,9 +45,17 @@ export default function RootLayout() {
     InstrumentSerif_400Regular,
   });
 
+  const authStatus = useAuthStore((s) => s.status);
+  const restore = useAuthStore((s) => s.restore);
+
   useEffect(() => {
-    init();
-  }, [init]);
+    restore();
+  }, [restore]);
+
+  // Load the app's data only once there is a signed-in user.
+  useEffect(() => {
+    if (authStatus === 'signedIn') init();
+  }, [authStatus, init]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -54,7 +63,7 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || authStatus === 'loading') {
     return null;
   }
 
@@ -63,12 +72,16 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="terrain" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen
-            name="onboarding"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
+          <Stack.Protected guard={authStatus === 'signedIn'}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="terrain" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="contacts" options={{ headerShown: false }} />
+            <Stack.Screen name="safety-topic/[topic]" options={{ headerShown: false }} />
+            <Stack.Screen name="onboarding" options={{ presentation: 'modal', headerShown: false }} />
+          </Stack.Protected>
+          <Stack.Protected guard={authStatus === 'signedOut'}>
+            <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
+          </Stack.Protected>
         </Stack>
         {showSplash && (
           <SplashScreenOverlay onFinish={() => setShowSplash(false)} />

@@ -8,7 +8,6 @@ import {
   NavigationRouteOption,
   SafePoint,
   TelemetryStation,
-  UserProfile,
 } from '@/types';
 
 export const POC_LAKES: Lake[] = [
@@ -26,46 +25,6 @@ export const POC_LAKES: Lake[] = [
     satelliteSources: ['Sentinel-2 L2A', 'Sentinel-1 SAR', 'Copernicus DEM'],
   },
 ];
-
-export const MOCK_USER_PROFILE: UserProfile = {
-  userId: 'usr-tenzing-902',
-  name: 'Tenzing Bhutia',
-  phone: '+91 9830-582910',
-  role: 'resident',
-  homeZoneId: 'chungthang-zone',
-  homeLocationName: 'Chungthang, North Sikkim, India',
-  elevationM: 1790,
-  language: 'en',
-  smsFallbackEnabled: true,
-  offlineMapsCached: true,
-  cachedMapSizeMB: 48,
-  contacts: [
-    {
-      contactId: 'c-1',
-      name: 'Pema Bhutia',
-      relation: 'Sister',
-      phone: '+91 9830-443219',
-      isActive: true,
-      notifyOnRisk: true,
-    },
-    {
-      contactId: 'c-2',
-      name: 'Sonam Lepcha',
-      relation: 'Mother',
-      phone: '+91 9832-778902',
-      isActive: true,
-      notifyOnRisk: true,
-    },
-    {
-      contactId: 'c-3',
-      name: 'Karma Tamang',
-      relation: 'Community Elder',
-      phone: '+91 9733-110943',
-      isActive: false,
-      notifyOnRisk: false,
-    },
-  ],
-};
 
 export const MOCK_ZONES: DownstreamZone[] = [
   {

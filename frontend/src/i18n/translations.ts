@@ -11,6 +11,35 @@ export interface Translations {
     map: string;
     profile: string;
   };
+  auth: {
+    title: string;
+    subtitle: string;
+    countryLabel: string;
+    phoneLabel: string;
+    sendCode: string;
+    smsNote: string;
+    codeTitle: string;
+    codeSentTo: string;
+    verify: string;
+    resendIn: string;
+    resend: string;
+    changeNumber: string;
+    languageLabel: string;
+    devCode: string;
+    errPhone: string;
+    errNetwork: string;
+    errWrong: string;
+    errExpired: string;
+    errLocked: string;
+    errWait: string;
+    errLimit: string;
+    errSms: string;
+    errGeneric: string;
+    sending: string;
+    verifying: string;
+    india: string;
+    nepal: string;
+  };
   alertLevels: {
     clear: string;
     watch: string;
@@ -115,6 +144,35 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       map: 'Map',
       profile: 'Profile',
     },
+    auth: {
+      title: 'Sign in to Raha',
+      subtitle: 'Early warnings for glacial lake floods, in your language.',
+      countryLabel: 'Country',
+      phoneLabel: 'Mobile number',
+      sendCode: 'Send code',
+      smsNote: 'We will send a one-time code by SMS. Your number is used only to sign you in.',
+      codeTitle: 'Enter the 6-digit code',
+      codeSentTo: 'We sent a code to',
+      verify: 'Continue',
+      resendIn: 'Send a new code in',
+      resend: 'Send a new code',
+      changeNumber: 'Use a different number',
+      languageLabel: 'Language',
+      devCode: 'Development code (tap to fill)',
+      errPhone: 'Enter a valid mobile number.',
+      errNetwork: 'Cannot reach the server. Check your connection and try again.',
+      errWrong: 'That code is not right. Check it and try again.',
+      errExpired: 'That code has expired. Ask for a new one.',
+      errLocked: 'Too many wrong tries. Ask for a new code.',
+      errWait: 'Please wait a little before asking for another code.',
+      errLimit: 'Too many codes requested. Try again later.',
+      errSms: 'Text messages are not available right now. Try again later.',
+      errGeneric: 'Something went wrong. Please try again.',
+      sending: 'Sending…',
+      verifying: 'Checking…',
+      india: 'India',
+      nepal: 'Nepal',
+    },
     alertLevels: {
       clear: 'Clear',
       watch: 'Watch',
@@ -217,6 +275,35 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       map: 'नक्शा',
       profile: 'प्रोफाइल',
     },
+    auth: {
+      title: 'Raha में साइन इन करें',
+      subtitle: 'हिमनद झील बाढ़ की पूर्व चेतावनी, आपकी भाषा में।',
+      countryLabel: 'देश',
+      phoneLabel: 'मोबाइल नंबर',
+      sendCode: 'कोड भेजें',
+      smsNote: 'हम SMS से एक बार का कोड भेजेंगे। आपका नंबर केवल साइन इन के लिए इस्तेमाल होता है।',
+      codeTitle: '6 अंकों का कोड डालें',
+      codeSentTo: 'हमने कोड भेजा है',
+      verify: 'आगे बढ़ें',
+      resendIn: 'नया कोड भेजें',
+      resend: 'नया कोड भेजें',
+      changeNumber: 'दूसरा नंबर इस्तेमाल करें',
+      languageLabel: 'भाषा',
+      devCode: 'डेवलपमेंट कोड (भरने के लिए दबाएँ)',
+      errPhone: 'सही मोबाइल नंबर डालें।',
+      errNetwork: 'सर्वर से संपर्क नहीं हो पा रहा। अपना कनेक्शन जाँचें और फिर कोशिश करें।',
+      errWrong: 'यह कोड सही नहीं है। जाँचकर फिर कोशिश करें।',
+      errExpired: 'इस कोड की समय सीमा खत्म हो गई। नया कोड माँगें।',
+      errLocked: 'बहुत ज़्यादा गलत कोशिशें। नया कोड माँगें।',
+      errWait: 'दूसरा कोड माँगने से पहले थोड़ा रुकें।',
+      errLimit: 'बहुत ज़्यादा कोड माँगे गए। बाद में कोशिश करें।',
+      errSms: 'अभी SMS उपलब्ध नहीं है। बाद में कोशिश करें।',
+      errGeneric: 'कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।',
+      sending: 'भेज रहे हैं…',
+      verifying: 'जाँच रहे हैं…',
+      india: 'भारत',
+      nepal: 'नेपाल',
+    },
     alertLevels: {
       clear: 'सुरक्षित',
       watch: 'निगरानी',
@@ -318,6 +405,35 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       home: 'गृह',
       map: 'नक्सा',
       profile: 'प्रोफाइल',
+    },
+    auth: {
+      title: 'Raha मा साइन इन गर्नुहोस्',
+      subtitle: 'हिमनदी ताल बाढीको पूर्व चेतावनी, तपाईंको भाषामा।',
+      countryLabel: 'देश',
+      phoneLabel: 'मोबाइल नम्बर',
+      sendCode: 'कोड पठाउनुहोस्',
+      smsNote: 'हामी SMS बाट एक पटकको कोड पठाउँछौं। तपाईंको नम्बर साइन इनका लागि मात्र प्रयोग हुन्छ।',
+      codeTitle: '६ अङ्कको कोड हाल्नुहोस्',
+      codeSentTo: 'हामीले कोड पठायौं',
+      verify: 'अगाडि बढ्नुहोस्',
+      resendIn: 'नयाँ कोड पठाउनुहोस्',
+      resend: 'नयाँ कोड पठाउनुहोस्',
+      changeNumber: 'अर्को नम्बर प्रयोग गर्नुहोस्',
+      languageLabel: 'भाषा',
+      devCode: 'डेभलपमेन्ट कोड (भर्न थिच्नुहोस्)',
+      errPhone: 'सही मोबाइल नम्बर हाल्नुहोस्।',
+      errNetwork: 'सर्भरसँग सम्पर्क हुन सकेन। इन्टरनेट जाँचेर फेरि प्रयास गर्नुहोस्।',
+      errWrong: 'यो कोड सही छैन। जाँचेर फेरि प्रयास गर्नुहोस्।',
+      errExpired: 'यो कोडको समय सकियो। नयाँ कोड माग्नुहोस्।',
+      errLocked: 'धेरै गलत प्रयास भए। नयाँ कोड माग्नुहोस्।',
+      errWait: 'अर्को कोड माग्नु अघि केही बेर पर्खनुहोस्।',
+      errLimit: 'धेरै कोड मागियो। पछि प्रयास गर्नुहोस्।',
+      errSms: 'अहिले SMS उपलब्ध छैन। पछि प्रयास गर्नुहोस्।',
+      errGeneric: 'केही गडबड भयो। कृपया फेरि प्रयास गर्नुहोस्।',
+      sending: 'पठाउँदै…',
+      verifying: 'जाँच्दै…',
+      india: 'भारत',
+      nepal: 'नेपाल',
     },
     alertLevels: {
       clear: 'सुरक्षित',
