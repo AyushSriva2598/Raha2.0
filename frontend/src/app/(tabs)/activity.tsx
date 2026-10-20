@@ -1,188 +1,224 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing } from '@/constants/theme';
+import * as WebBrowser from 'expo-web-browser';
+import { CloudRain, Activity as Pulse, Newspaper, ChevronDown, ExternalLink, WifiOff } from 'lucide-react-native';
+import { Colors, Typography, Spacing, Radii, Shadows } from '@/constants/theme';
 import { Pill } from '@/components/common/Pill';
-import {
-  ActivityItem,
-  ActivityItemData,
-} from '@/components/common/ActivityItem';
+import { useFeedStore, formatAgo } from '@/services/feedStore';
+import type { FeedCategory, FeedItem } from '@/types';
 
-type FilterType = 'All' | 'Alerts' | 'News' | 'Reports';
+type Filter = 'all' | FeedCategory;
 
-const MOCK_ACTIVITIES: ActivityItemData[] = [
-  {
-    id: 'act-1',
-    type: 'alert',
-    title: 'Imja Tsho Water Level Surge',
-    meta: 'Level raised +0.8m above normal threshold',
-    timestamp: '12m ago',
-    unread: true,
-  },
-  {
-    id: 'act-2',
-    type: 'trip',
-    title: 'Evacuation Route to Dingboche High Ground',
-    meta: 'Safe route 4.2 km completed without incidents',
-    timestamp: '2h ago',
-    unread: false,
-  },
-  {
-    id: 'act-3',
-    type: 'report',
-    title: 'Community Hazard Report: Debris on trail',
-    meta: 'Reported by local ranger near reach #2',
-    timestamp: '4h ago',
-    unread: false,
-  },
-  {
-    id: 'act-4',
-    type: 'news',
-    title: 'DHM Monsoon & Glacial Outburst Bulletin',
-    meta: 'Department of Hydrology and Meteorology advisory',
-    timestamp: 'Yesterday',
-    unread: false,
-  },
-  {
-    id: 'act-5',
-    type: 'system',
-    title: 'Offline Emergency Cache Synchronized',
-    meta: 'Khumbu Basin satellite map & shelters cached',
-    timestamp: 'Yesterday',
-    unread: false,
-  },
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'weather', label: 'Weather' },
+  { id: 'quake', label: 'Quakes' },
+  { id: 'news', label: 'News' },
 ];
 
+const CATEGORY_META = {
+  weather: { Icon: CloudRain, color: Colors.you, bg: '#E8EEF9', label: 'Weather' },
+  quake: { Icon: Pulse, color: Colors.watchTextAlt, bg: '#FFF3D6', label: 'Earthquake' },
+  news: { Icon: Newspaper, color: Colors.coralDeep, bg: Colors.coralSoft, label: 'News' },
+} as const;
+
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((startOf(today) - startOf(d)) / 86400000);
+  if (diff <= 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7) return 'This week';
+  return 'Earlier';
+}
+
+function FeedCard({ item, expanded, onToggle }: { item: FeedItem; expanded: boolean; onToggle: () => void }) {
+  const meta = CATEGORY_META[item.category];
+  const Icon = meta.Icon;
+  return (
+    <View style={styles.card}>
+      <Pressable
+        onPress={onToggle}
+        style={({ pressed }) => [styles.cardHeader, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={item.title}>
+        <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
+          <Icon size={20} color={meta.color} strokeWidth={2.2} />
+        </View>
+        <View style={styles.cardText}>
+          <Text style={styles.title} numberOfLines={expanded ? undefined : 3}>
+            {item.title}
+          </Text>
+          <Text style={styles.metaLine} numberOfLines={1}>
+            {item.source.name.split(' (')[0]} • {formatAgo(item.publishedAt)}
+          </Text>
+          {!expanded && item.summary ? (
+            <Text style={styles.summary} numberOfLines={2}>
+              {item.summary}
+            </Text>
+          ) : null}
+        </View>
+        <ChevronDown
+          size={20}
+          color={Colors.text3}
+          style={expanded ? styles.chevronOpen : undefined}
+        />
+      </Pressable>
+
+      {expanded && (
+        <View style={styles.article}>
+          {item.body.map((p, i) => (
+            <Text key={i} style={styles.paragraph}>
+              {p}
+            </Text>
+          ))}
+
+          {item.facts && item.facts.length > 0 && (
+            <View style={styles.facts}>
+              {item.facts.map((f) => (
+                <View key={f.label} style={styles.factRow}>
+                  <Text style={styles.factLabel}>{f.label}</Text>
+                  <Text style={styles.factValue}>{f.value}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={styles.citation}>
+            <Text style={styles.citationHeading}>Source</Text>
+            <Text style={styles.citationText}>{item.source.name}</Text>
+            <Text style={styles.citationMeta}>
+              {meta.label} • published {new Date(item.publishedAt).toLocaleString()} • retrieved{' '}
+              {new Date(item.retrievedAt).toLocaleString()}
+            </Text>
+            <Pressable
+              onPress={() => WebBrowser.openBrowserAsync(item.source.url).catch(() => {})}
+              style={({ pressed }) => [styles.sourceButton, pressed && styles.pressed]}
+              accessibilityRole="link"
+              accessibilityLabel={`Open source: ${item.source.name}`}>
+              <ExternalLink size={16} color={Colors.coralDeep} />
+              <Text style={styles.sourceButtonText}>Open source</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function ActivityScreen() {
-  const [selectedFilter, setSelectedFilter] = useState<FilterType>('All');
-  const [refreshing, setRefreshing] = useState(false);
+  const { items, status, generatedAt, sources, hydrate, refresh } = useFeedStore();
+  const [filter, setFilter] = useState<Filter>('all');
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
-  };
+  useEffect(() => {
+    hydrate().then(() => refresh());
+  }, [hydrate, refresh]);
 
-  const filteredItems = MOCK_ACTIVITIES.filter((item) => {
-    if (selectedFilter === 'All') return true;
-    if (selectedFilter === 'Alerts') return item.type === 'alert';
-    if (selectedFilter === 'News') return item.type === 'news';
-    if (selectedFilter === 'Reports') return item.type === 'report';
-    return true;
-  });
+  const onRefresh = useCallback(() => refresh(true), [refresh]);
 
-  const todayItems = filteredItems.filter((i) => !i.timestamp.includes('Yesterday'));
-  const yesterdayItems = filteredItems.filter((i) => i.timestamp.includes('Yesterday'));
+  const groups = useMemo(() => {
+    const visible = items.filter((i) => filter === 'all' || i.category === filter);
+    const map = new Map<string, FeedItem[]>();
+    for (const it of visible) {
+      const key = dayLabel(it.publishedAt);
+      map.set(key, [...(map.get(key) ?? []), it]);
+    }
+    return [...map.entries()];
+  }, [items, filter]);
+
+  const failed = sources.filter((s) => !s.ok);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header Title */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Activity</Text>
-        </View>
-
-        {/* Filter Chips Row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}>
-          {(['All', 'Alerts', 'News', 'Reports'] as FilterType[]).map((filter) => {
-            const isSelected = selectedFilter === filter;
-            return (
-              <Pill
-                key={filter}
-                label={filter}
-                variant={isSelected ? 'active' : 'neutral'}
-                size="md"
-                onPress={() => setSelectedFilter(filter)}
-                style={styles.filterChip}
-              />
-            );
-          })}
-        </ScrollView>
-
-        {/* Activity List */}
-        <ScrollView
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={Colors.ink}
-            />
-          }>
-          {todayItems.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionHeader}>TODAY</Text>
-              {todayItems.map((item) => (
-                <ActivityItem key={item.id} item={item} />
-              ))}
-            </View>
-          )}
-
-          {yesterdayItems.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionHeader}>YESTERDAY</Text>
-              {yesterdayItems.map((item) => (
-                <ActivityItem key={item.id} item={item} />
-              ))}
-            </View>
-          )}
-
-          {filteredItems.length === 0 && (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No activity found for {selectedFilter}</Text>
-            </View>
-          )}
-        </ScrollView>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Activity
+        </Text>
+        <Text style={styles.headerSub}>
+          Live public data for North Sikkim. Weather, earthquakes and news, each with its source.
+        </Text>
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+        {FILTERS.map((f) => (
+          <Pill
+            key={f.id}
+            label={f.label}
+            variant="coral"
+            size="md"
+            selected={filter === f.id}
+            onPress={() => setFilter(f.id)}
+          />
+        ))}
+      </ScrollView>
+
+      <ScrollView
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={status === 'loading'} onRefresh={onRefresh} tintColor={Colors.coral} />}>
+        {status === 'offline' && (
+          <View style={styles.banner}>
+            <WifiOff size={16} color={Colors.text2} />
+            <Text style={styles.bannerText}>
+              Can&apos;t reach the server.{' '}
+              {generatedAt ? `Showing saved items from ${new Date(generatedAt).toLocaleString()}.` : 'Nothing saved yet.'}
+            </Text>
+          </View>
+        )}
+        {status === 'ok' && generatedAt && (
+          <Text style={styles.updated}>Updated {formatAgo(generatedAt)}. Pull down to refresh.</Text>
+        )}
+        {failed.length > 0 && status === 'ok' && (
+          <Text style={styles.updated}>Unavailable right now: {failed.map((s) => s.name).join(', ')}.</Text>
+        )}
+
+        {groups.map(([label, list]) => (
+          <View key={label} style={styles.section}>
+            <Text style={styles.sectionHeader}>{label}</Text>
+            {list.map((item) => (
+              <FeedCard
+                key={item.id}
+                item={item}
+                expanded={openId === item.id}
+                onToggle={() => setOpenId(openId === item.id ? null : item.id)}
+              />
+            ))}
+          </View>
+        ))}
+
+        {groups.length === 0 && status !== 'loading' && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Nothing to show for this filter yet.</Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-  header: {
-    paddingHorizontal: Spacing.sidePadding,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontFamily: Typography.family.bold,
-    fontSize: Typography.sizes.hero, // 30 bold
-    color: Colors.ink,
-  },
-  filterRow: {
-    paddingHorizontal: Spacing.sidePadding,
-    paddingVertical: 10,
-    gap: 8,
+  safeArea: { flex: 1, backgroundColor: Colors.bg },
+  header: { paddingHorizontal: Spacing.sidePadding, paddingTop: 12, paddingBottom: 4, gap: 4 },
+  headerTitle: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.hero, color: Colors.ink },
+  headerSub: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, lineHeight: 20, color: Colors.text2 },
+  filterRow: { paddingHorizontal: Spacing.sidePadding, paddingVertical: 10, gap: 8, flexDirection: 'row' },
+  listContent: { paddingHorizontal: Spacing.sidePadding, paddingTop: 4, paddingBottom: 120 },
+  banner: {
     flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: Radii.tile,
+    backgroundColor: Colors.coralTint,
+    marginBottom: 12,
   },
-  filterChip: {
-    minWidth: 64,
-  },
-  listContent: {
-    paddingHorizontal: Spacing.sidePadding,
-    paddingTop: 8,
-    paddingBottom: 100, // Clear bottom tab bar
-  },
-  section: {
-    marginBottom: 16,
-  },
+  bannerText: { flex: 1, fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2 },
+  updated: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, color: Colors.text3, marginBottom: 8 },
+  section: { marginBottom: 12 },
   sectionHeader: {
     fontFamily: Typography.family.bold,
     fontSize: Typography.sizes.caption,
@@ -191,14 +227,51 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
   },
-  emptyContainer: {
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 10,
+    ...Shadows.card,
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 14 },
+  pressed: { opacity: 0.8 },
+  iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  cardText: { flex: 1, gap: 4 },
+  title: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.bodyLarge, lineHeight: 23, color: Colors.ink },
+  metaLine: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, color: Colors.text3 },
+  summary: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, lineHeight: 20, color: Colors.text2 },
+  chevronOpen: { transform: [{ rotate: '180deg' }] },
+  article: { paddingHorizontal: 14, paddingBottom: 14, gap: 10 },
+  paragraph: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.body, lineHeight: 25, color: Colors.ink },
+  facts: { borderRadius: Radii.tile, backgroundColor: Colors.bg, padding: 12, gap: 6 },
+  factRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  factLabel: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2 },
+  factValue: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, color: Colors.ink },
+  citation: { borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: 10, gap: 4 },
+  citationHeading: {
+    fontFamily: Typography.family.bold,
+    fontSize: Typography.sizes.caption,
+    color: Colors.text3,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  citationText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, color: Colors.ink },
+  citationMeta: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, lineHeight: 18, color: Colors.text3 },
+  sourceButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+    gap: 8,
+    minHeight: 44,
+    alignSelf: 'flex-start',
   },
-  emptyText: {
-    fontFamily: Typography.family.regular,
+  sourceButtonText: {
+    fontFamily: Typography.family.bold,
     fontSize: Typography.sizes.body,
-    color: Colors.text2,
+    color: Colors.coralDeep,
+    textDecorationLine: 'underline',
   },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  emptyText: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.body, color: Colors.text2 },
 });

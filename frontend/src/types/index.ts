@@ -142,3 +142,71 @@ export interface NavigationRouteOption {
   riskStatus: 'SAFE' | 'AT_RISK';
   summary: string;
 }
+
+// Live public-data feed (served by the backend at /api/feed)
+export type FeedCategory = 'weather' | 'quake' | 'news';
+
+export interface FeedItem {
+  id: string;
+  category: FeedCategory;
+  title: string;
+  summary: string;
+  body: string[];
+  facts?: { label: string; value: string }[];
+  source: { name: string; url: string };
+  publishedAt: string;
+  retrievedAt: string;
+}
+
+export interface FeedSourceStatus {
+  name: string;
+  ok: boolean;
+  count: number;
+  error?: string;
+}
+
+// 3D lake monitor data (served by the backend at /api/glof/:lakeId)
+export type GlofLevel = 'NORMAL' | 'WATCH' | 'ADVISORY' | 'WARNING' | 'EVACUATE';
+
+export interface GlofFrame {
+  i: number;
+  date: string;
+  scene: string;
+  level: GlofLevel | null;
+  rawLevel: GlofLevel | null;
+  areaHa: number;
+  advanceM: number | null;
+  growthPct: number | null;
+  iceAreaKm2: number | null;
+  reasons: { level: GlofLevel; text: string }[];
+  flags: string[];
+  geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown };
+}
+
+export interface GlofLakeSummary {
+  id: string;
+  name: string;
+  country: string;
+  center: [number, number];
+  elevationM: number;
+}
+
+export interface GlofLakeData {
+  lake: {
+    id: string;
+    name: string;
+    country: string;
+    center: [number, number];
+    bbox: [number, number, number, number];
+    elevationM: number;
+    events: { date: string; label: string; detail: string }[];
+  };
+  archiveAvailable: boolean;
+  baseline: { areaHa: number; label: string } | null;
+  thresholds: Record<string, number> | null;
+  levelChanges: { date: string; from: GlofLevel; to: GlofLevel; reasons: string[] }[];
+  frames: GlofFrame[];
+  latest: { scene: string; acquired: string; waterAreaHa: number; iceAreaHa: number; cloudCover: number } | null;
+  attribution: { imagery: string; terrain: string; method: string; caveat: string; service: string };
+  retrievedAt: string;
+}
