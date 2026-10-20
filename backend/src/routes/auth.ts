@@ -1,66 +1,63 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db.js';
+import { requireAuth } from '../middleware/requireAuth.js';
+import { checkOtp, issueOtp, normalizePhone, OtpError } from '../services/otp.js';
+import { signToken } from '../services/session.js';
 
 const router = Router();
 
-// In-memory OTP storage for testing / dev
-const otpCache = new Map<string, { code: string; expiresAt: number }>();
-
-// POST /api/auth/send-otp
+// POST /api/auth/send-otp  { phone }  Sends a one-time code by SMS
 router.post('/send-otp', async (req: Request, res: Response) => {
+  const phone = normalizePhone(req.body?.phone);
+  if (!phone) {
+    res.status(400).json({ error: 'Enter your phone number with the country code, for example +91 98300 12345.' });
+    return;
+  }
   try {
-    const { phone } = req.body;
-    if (!phone) {
-      res.status(400).json({ error: 'Phone number is required' });
+    const sent = await issueOtp(phone);
+    res.json({ success: true, expiresInSec: sent.expiresInSec, resendAfterSec: sent.resendAfterSec, debugCode: sent.code });
+  } catch (error) {
+    if (error instanceof OtpError) {
+      const status = error.code === 'SMS_NOT_CONFIGURED' ? 503 : 429;
+      res.status(status).json({ error: error.message, retryAfterSec: error.retryAfterSec });
       return;
     }
-
-    // Generate 6-digit OTP code (fixed default in dev or random)
-    const code = phone.endsWith('0000') ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    otpCache.set(phone, { code, expiresAt });
-
-    console.log(`📱 [SMS Gateway Dispatch] OTP for ${phone}: ${code}`);
-
-    res.json({
-      success: true,
-      message: 'OTP sent successfully',
-      debugCode: process.env.NODE_ENV !== 'production' ? code : undefined,
-    });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json({ error: 'Could not send the code. Please try again.' });
   }
 });
 
-// POST /api/auth/verify-otp
+// POST /api/auth/verify-otp  { phone, code }  Signs in (or registers) and returns a session token
 router.post('/verify-otp', async (req: Request, res: Response) => {
+  const phone = normalizePhone(req.body?.phone);
+  const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+  if (!phone || !/^\d{6}$/.test(code)) {
+    res.status(400).json({ error: 'Enter the 6-digit code.' });
+    return;
+  }
+  const result = checkOtp(phone, code);
+  if (result !== 'ok') {
+    const messages = {
+      invalid: 'That code is not right. Check it and try again.',
+      expired: 'That code has expired. Ask for a new one.',
+      locked: 'Too many wrong tries. Ask for a new code.',
+    } as const;
+    res.status(result === 'invalid' ? 401 : 410).json({ error: messages[result], reason: result });
+    return;
+  }
   try {
-    const { phone, code } = req.body;
-    if (!phone || !code) {
-      res.status(400).json({ error: 'Phone and code are required' });
-      return;
-    }
+    const { profile, isNewUser } = await db.findOrCreateUserByPhone(phone);
+    res.json({ success: true, token: signToken(profile.userId), isNewUser, profile });
+  } catch {
+    res.status(500).json({ error: 'Could not sign you in. Please try again.' });
+  }
+});
 
-    const cached = otpCache.get(phone);
-    // Allow master code '123456' in dev or if code matches
-    const isValid = (cached && cached.code === code && cached.expiresAt > Date.now()) || code === '123456';
-
-    if (!isValid) {
-      res.status(401).json({ error: 'Invalid or expired OTP code' });
-      return;
-    }
-
-    otpCache.delete(phone);
-    const profile = await db.getUserProfile();
-
-    res.json({
-      success: true,
-      token: `raha-jwt-${Date.now()}`,
-      profile,
-    });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+// GET /api/auth/me  Returns the signed-in user's profile (used to restore a saved session)
+router.get('/me', requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.json(await db.getUserProfile(req.userId as string));
+  } catch {
+    res.status(401).json({ error: 'Please sign in again.' });
   }
 });
 

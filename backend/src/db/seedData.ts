@@ -1,4 +1,4 @@
-import { Lake, LakeAssessment, SafePoint, UserProfile, EventLog, NavigationRouteOption, AlertLevel } from '../types/index.js';
+import { Lake, LakeAssessment, SafePoint, EventLog, NavigationRouteOption, AlertLevel } from '../types/index.js';
 
 export const SEED_LAKES: Lake[] = [
   {
@@ -162,46 +162,6 @@ export const SEED_SAFE_POINTS: SafePoint[] = [
     notes: 'Secondary evacuation ground for western village residents. Water purification tablets available.',
   },
 ];
-
-export const SEED_USER_PROFILE: UserProfile = {
-  userId: 'usr-himalaya-001',
-  name: 'Tenzing Bhutia',
-  phone: '+91 9841234567',
-  role: 'resident',
-  homeZoneId: 'chungthang-zone',
-  homeLocationName: 'Chungthang, North Sikkim',
-  elevationM: 1790,
-  language: 'en',
-  smsFallbackEnabled: true,
-  offlineMapsCached: true,
-  cachedMapSizeMB: 48.2,
-  contacts: [
-    {
-      contactId: 'c-01',
-      name: 'Pema Bhutia (Spouse)',
-      relation: 'Family',
-      phone: '+91 9849876543',
-      isActive: true,
-      notifyOnRisk: true,
-    },
-    {
-      contactId: 'c-02',
-      name: 'Karma Lepcha (Village Head)',
-      relation: 'Village Leader',
-      phone: '+91 9801122334',
-      isActive: true,
-      notifyOnRisk: true,
-    },
-    {
-      contactId: 'c-03',
-      name: 'Dorjee Tamang (Neighbor)',
-      relation: 'Neighbor',
-      phone: '+91 9812345678',
-      isActive: true,
-      notifyOnRisk: false,
-    },
-  ],
-};
 
 export const SEED_EVENT_LOGS: Record<AlertLevel, EventLog[]> = {
   CLEAR: [

@@ -65,3 +65,6 @@ coverage/
 # personal screenshots used as design references
 WhatsApp Image*
 Screenshot*
+
+# development signing secret (generated locally)
+.jwt-dev-secret

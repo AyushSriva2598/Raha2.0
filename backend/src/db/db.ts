@@ -1,10 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { config } from '../config/index.js';
 import {
   SEED_LAKES,
   SEED_ASSESSMENTS,
   SEED_SAFE_POINTS,
-  SEED_USER_PROFILE,
   SEED_EVENT_LOGS,
   SEED_NAVIGATION_ROUTES,
 } from './seedData.js';
@@ -32,7 +32,9 @@ export class DatabaseStore {
   private currentLevel: AlertLevel = 'CLEAR';
   private activeAssessment: LakeAssessment = { ...SEED_ASSESSMENTS.CLEAR };
   private safePoints: SafePoint[] = [...SEED_SAFE_POINTS];
-  private userProfile: UserProfile = JSON.parse(JSON.stringify(SEED_USER_PROFILE));
+  // Users by id, plus a phone-number index. Profiles start blank: nothing is pre-filled.
+  private users = new Map<string, UserProfile>();
+  private phoneIndex = new Map<string, string>();
   private eventLogs: Record<AlertLevel, EventLog[]> = { ...SEED_EVENT_LOGS };
   private navigationRoutes: NavigationRouteOption[] = [...SEED_NAVIGATION_ROUTES];
 
@@ -141,30 +143,60 @@ export class DatabaseStore {
     return [...(this.eventLogs[targetLevel] || this.eventLogs.CLEAR)];
   }
 
-  // --- USER PROFILE & SOS CONTACTS ---
-  async getUserProfile(): Promise<UserProfile> {
-    return { ...this.userProfile };
-  }
-
-  async updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
-    this.userProfile = {
-      ...this.userProfile,
-      ...updates,
+  // --- USERS, PROFILES & SOS CONTACTS ---
+  /** Signs a phone number in: finds its user, or creates a blank profile for a first-time user. */
+  async findOrCreateUserByPhone(phone: string): Promise<{ profile: UserProfile; isNewUser: boolean }> {
+    const existingId = this.phoneIndex.get(phone);
+    const existing = existingId ? this.users.get(existingId) : undefined;
+    if (existing) return { profile: JSON.parse(JSON.stringify(existing)), isNewUser: false };
+    const profile: UserProfile = {
+      userId: `usr-${randomUUID()}`,
+      name: '',
+      phone,
+      role: 'resident',
+      homeZoneId: '',
+      homeLocationName: '',
+      elevationM: 0,
+      language: 'en',
+      smsFallbackEnabled: true,
+      offlineMapsCached: false,
+      cachedMapSizeMB: 0,
+      contacts: [],
     };
-    return { ...this.userProfile };
+    this.users.set(profile.userId, profile);
+    this.phoneIndex.set(phone, profile.userId);
+    return { profile: JSON.parse(JSON.stringify(profile)), isNewUser: true };
   }
 
-  async addContact(contactData: Omit<SosContact, 'contactId'>): Promise<SosContact> {
-    const newContact: SosContact = {
-      ...contactData,
-      contactId: `c-${Date.now().toString(36)}`,
-    };
-    this.userProfile.contacts.push(newContact);
-    return newContact;
+  private requireUser(userId: string): UserProfile {
+    const user = this.users.get(userId);
+    if (!user) throw new Error('User not found');
+    return user;
   }
 
-  async toggleContact(contactId: string, isActive: boolean): Promise<SosContact> {
-    const contact = this.userProfile.contacts.find((c) => c.contactId === contactId);
+  async getUserProfile(userId: string): Promise<UserProfile> {
+    return JSON.parse(JSON.stringify(this.requireUser(userId)));
+  }
+
+  // Only these fields may be changed by the user; identity fields (id, phone, role) never are.
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+    const user = this.requireUser(userId);
+    const allowed: (keyof UserProfile)[] = ['name', 'homeZoneId', 'homeLocationName', 'elevationM', 'language', 'smsFallbackEnabled', 'offlineMapsCached', 'cachedMapSizeMB'];
+    for (const key of allowed) {
+      if (updates[key] !== undefined) (user as unknown as Record<string, unknown>)[key] = updates[key];
+    }
+    return JSON.parse(JSON.stringify(user));
+  }
+
+  async addContact(userId: string, contactData: Omit<SosContact, 'contactId'>): Promise<SosContact> {
+    const user = this.requireUser(userId);
+    const newContact: SosContact = { ...contactData, contactId: `c-${randomUUID().slice(0, 8)}` };
+    user.contacts.push(newContact);
+    return { ...newContact };
+  }
+
+  async toggleContact(userId: string, contactId: string, isActive: boolean): Promise<SosContact> {
+    const contact = this.requireUser(userId).contacts.find((c) => c.contactId === contactId);
     if (!contact) {
       throw new Error(`Contact with ID ${contactId} not found`);
     }
@@ -172,16 +204,17 @@ export class DatabaseStore {
     return { ...contact };
   }
 
-  async deleteContact(contactId: string): Promise<boolean> {
-    const idx = this.userProfile.contacts.findIndex((c) => c.contactId === contactId);
+  async deleteContact(userId: string, contactId: string): Promise<boolean> {
+    const contacts = this.requireUser(userId).contacts;
+    const idx = contacts.findIndex((c) => c.contactId === contactId);
     if (idx === -1) return false;
-    this.userProfile.contacts.splice(idx, 1);
+    contacts.splice(idx, 1);
     return true;
   }
 
   // --- SOS BROADCAST & FANOUT ---
-  async recordSosBroadcast(payload: SosBroadcastPayload): Promise<SosResponse> {
-    const activeRecipients = this.userProfile.contacts.filter(
+  async recordSosBroadcast(userId: string, payload: SosBroadcastPayload): Promise<SosResponse> {
+    const activeRecipients = this.requireUser(userId).contacts.filter(
       (c) => payload.recipientContactIds.includes(c.contactId) && c.isActive
     );
 

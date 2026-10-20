@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 import { realtimeService } from '../services/realtimeService.js';
 import { SosBroadcastPayload } from '../types/index.js';
 
 const router = Router();
 
 // POST /api/alerts/sos-broadcast
-router.post('/sos-broadcast', async (req: Request, res: Response) => {
+router.post('/sos-broadcast', requireAuth, async (req: Request, res: Response) => {
   try {
     const payload: SosBroadcastPayload = req.body;
     if (!payload.recipientContactIds || !Array.isArray(payload.recipientContactIds)) {
@@ -14,7 +15,7 @@ router.post('/sos-broadcast', async (req: Request, res: Response) => {
       return;
     }
 
-    const response = await db.recordSosBroadcast(payload);
+    const response = await db.recordSosBroadcast(req.userId as string, payload);
 
     // Notify connected web dashboards and emergency operators
     realtimeService.broadcastSosAlert({
