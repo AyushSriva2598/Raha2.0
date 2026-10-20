@@ -11,15 +11,16 @@ export const TERRAIN_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <style>${MAPLIBRE_CSS}</style>
 <style>
-  html,body,#map{margin:0;padding:0;height:100%;background:#101418;overflow:hidden}
-  #haze{position:fixed;left:0;right:0;top:0;height:190px;pointer-events:none;z-index:2;background:linear-gradient(#101418 0%,rgba(16,20,24,.85) 35%,rgba(16,20,24,0) 100%)}
+  html,body,#map{margin:0;padding:0;height:100%;background:#101418;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   .maplibregl-ctrl-attrib{font:10px/1.3 sans-serif;max-width:70vw}
   .maplibregl-ctrl-attrib.maplibregl-compact{margin:0 0 4px 4px}
 </style>
 </head><body>
-<div id="map"></div><div id="haze"></div>
+<div id="map"></div>
 <script>
   function post(m){ if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(m)); }
+  document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  document.addEventListener('selectstart',function(e){ e.preventDefault(); });
 </script>
 <script>${MAPLIBRE_JS}</script>
 <script>
@@ -30,24 +31,30 @@ export const TERRAIN_HTML = `<!doctype html>
   // Tile pack for the current lake, filled by 'pack' messages (base64 tiles keyed z/x/y).
   var PACK = { dem:{}, sat:{}, bounds:null, loaded:false };
   function b64buf(b){ var s=atob(b), n=s.length, a=new Uint8Array(n); for(var i=0;i<n;i++) a[i]=s.charCodeAt(i); return a.buffer; }
+  // Tiles inside the bundled region are served from memory (works offline). Anything outside it is
+  // fetched from the network when online, so the camera is free to go anywhere.
+  var ONLINE = {
+    dem:function(z,x,y){ return 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/'+z+'/'+x+'/'+y+'.png'; },
+    sat:function(z,x,y){ return 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/'+z+'/'+y+'/'+x+'.jpg'; }
+  };
   maplibregl.addProtocol('pack', function(params){
-    // url: pack://dem/12/3010/1700 -> look the tile up in memory; a missing tile is a 404.
     var m = params.url.replace('pack://','').split('/');
-    var layer = m[0], key = m[1]+'/'+m[2]+'/'+m[3];
-    var b = PACK[layer] && PACK[layer][key];
-    if(!b) return Promise.reject(new Error('tile outside pack'));
-    return Promise.resolve({data:b64buf(b)});
+    var layer = m[0], z=m[1], x=m[2], y=m[3];
+    var b = PACK[layer] && PACK[layer][z+'/'+x+'/'+y];
+    if(b) return Promise.resolve({data:b64buf(b)});
+    if(navigator.onLine===false) return Promise.reject(new Error('offline tile outside the bundled region'));
+    return fetch(ONLINE[layer](z,x,y)).then(function(r){ if(!r.ok) throw new Error('tile '+r.status); return r.arrayBuffer(); }).then(function(d){ return {data:d}; });
   });
   var empty = function(){ return {type:'FeatureCollection',features:[]}; };
   var S = { usePack:false, lake:null, frames:[], idx:0, layers:{satellite:false,history:true,baseline:true}, rotate:false, exag:1.5, ready:false, inset:230 };
   var map, rafId = null;
 
   function build(lake){
-    var DEM = S.usePack ? ['pack://dem/{z}/{x}/{y}'] : ONLINE_DEM;
-    var SAT = S.usePack ? ['pack://sat/{z}/{x}/{y}'] : ONLINE_SAT;
+    var DEM = ['pack://dem/{z}/{x}/{y}'];
+    var SAT = ['pack://sat/{z}/{x}/{y}'];
     var pb = S.usePack;
     // Only zoom-13 tiles are bundled; the camera is kept near the lake so the data edge is never in view.
-    var sb = pb ? {minzoom:13,maxzoom:13} : {maxzoom:15};
+    var sb = {maxzoom:13};
     map = new maplibregl.Map({
       container:'map',
       style:{
@@ -55,7 +62,7 @@ export const TERRAIN_HTML = `<!doctype html>
         sources:{
           dem:Object.assign({type:'raster-dem',tiles:DEM,tileSize:256,encoding:'terrarium',attribution:'Terrain: AWS Open Data (Terrarium)'},sb),
           hs:Object.assign({type:'raster-dem',tiles:DEM,tileSize:256,encoding:'terrarium'},sb),
-          sat:Object.assign({type:'raster',tiles:SAT,tileSize:256,attribution:'Sentinel-2 cloudless 2020 \\u00a9 EOX (contains modified Copernicus Sentinel data)'},pb?{minzoom:13,maxzoom:13}:{maxzoom:13})
+          sat:Object.assign({type:'raster',tiles:SAT,tileSize:256,attribution:'Sentinel-2 cloudless 2020 \\u00a9 EOX (contains modified Copernicus Sentinel data)'},{maxzoom:13})
         },
         layers:[
           {id:'bg',type:'background',paint:{'background-color':'#101418'}},
@@ -66,10 +73,10 @@ export const TERRAIN_HTML = `<!doctype html>
         ],
         terrain:{source:'dem',exaggeration:S.exag}
       },
-      center:lake.center, zoom:12.2, pitch:52, bearing:-20, maxPitch:54, minZoom:S.usePack?12.0:9, maxZoom:15, attributionControl:{compact:true}
+      center:lake.center, zoom:12.2, pitch:52, bearing:-20, maxPitch:75, minZoom:9, maxZoom:16, attributionControl:{compact:true}
     });
     map.addControl(new maplibregl.NavigationControl({showCompass:false,visualizePitch:false}),'bottom-right');
-    map.on('load', function(){
+    map.on('style.load', function(){ try{
       ['lake-now','lake-hist','lake-base'].forEach(function(id){ map.addSource(id,{type:'geojson',data:empty()}); });
       map.addLayer({id:'hist-line',type:'line',source:'lake-hist',paint:{'line-color':['get','color'],'line-width':1.3,'line-opacity':0.95}});
       map.addLayer({id:'base-line',type:'line',source:'lake-base',paint:{'line-color':'#f5d06b','line-width':1.8,'line-dasharray':[2,2]}});
@@ -77,9 +84,12 @@ export const TERRAIN_HTML = `<!doctype html>
       map.addLayer({id:'lake-line',type:'line',source:'lake-now',paint:{'line-color':'#ffffff','line-width':1.4,'line-opacity':0.9}});
       S.ready = true;
       applyLayers(); drawFrame();
-      post({type:'ready'});
+      frameCamera(false);
+      // Do not wait for every tile (some may be slow or offline): ready on first idle or after 2.5 s.
+      var sent=false, go=function(){ if(!sent){ sent=true; post({type:'ready'}); } };
+      map.once('idle', go); setTimeout(go, 2500);
+      }catch(e){ post({type:'error',message:'Scene setup failed: '+e.message}); }
     });
-    map.on('moveend', clampToLake);
     map.on('error', function(e){
       var msg = e && e.error && e.error.message ? e.error.message : '';
       if (/WebGL/i.test(msg)) post({type:'error',message:'This device could not start 3D graphics (WebGL).'});
@@ -117,14 +127,6 @@ export const TERRAIN_HTML = `<!doctype html>
     map.setLayoutProperty('base-line','visibility',S.layers.baseline?'visible':'none');
   }
 
-  // Keep the view near the lake so the edge of the bundled data is never in sight: when a gesture ends
-  // outside a ~2 km box around the lake, ease back to its edge (maxBounds would force the zoom instead).
-  function clampToLake(){
-    if(!S.usePack || !S.lake || !map) return;
-    var c=map.getCenter(), L=S.lake.center, dx=0.022, dy=0.017;
-    var lng=Math.min(Math.max(c.lng,L[0]-dx),L[0]+dx), lat=Math.min(Math.max(c.lat,L[1]-dy),L[1]+dy);
-    if(lng!==c.lng || lat!==c.lat) map.easeTo({center:[lng,lat],duration:450});
-  }
   function frameCamera(animated){
     // The app's panels cover the bottom 'inset' px, so the lake is framed above them.
     map.easeTo({center:S.lake.center,zoom:12.2,pitch:52,bearing:-20,padding:{top:70,bottom:S.inset,left:0,right:0},duration:animated?1200:0});
@@ -147,7 +149,7 @@ export const TERRAIN_HTML = `<!doctype html>
         S.usePack = !!m.usePack && PACK.loaded;
         S.lake=m.lake; S.frames=m.frames; S.idx=Math.min(m.index||0,m.frames.length-1);
         if(m.layers) S.layers=m.layers; if(m.inset!=null) S.inset=m.inset;
-        if(!map){ build(m.lake); map.once('load',function(){ frameCamera(false); }); }
+        if(!map){ build(m.lake); }
         else if(S.ready){
           drawFrame(); applyLayers(); frameCamera(true); post({type:'ready'});
         }

@@ -12,8 +12,9 @@ interface TimelineSliderProps {
   events?: { date: string; label: string }[];
 }
 
-const TRACK_H = 10;
-const THUMB = 26;
+const TRACK_H = 12;
+const THUMB = 32;
+const SIDE = THUMB / 2 + 4; // room so the thumb is never clipped at either end
 
 const ts = (d: string) => new Date(`${d}T00:00:00Z`).getTime();
 
@@ -95,7 +96,8 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
           <Text
             key={ev.date}
             numberOfLines={1}
-            style={[styles.eventLabel, { left: Math.min(Math.max(xOf(ev.date) - 60, 0), Math.max(0, width - 120)) }]}>
+            pointerEvents="none"
+            style={[styles.eventLabel, { left: SIDE + Math.min(Math.max(xOf(ev.date) - 60, 0), Math.max(0, width - 120)) }]}>
             {ev.label}
           </Text>
         ))}
@@ -131,7 +133,7 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
       </View>
       <View style={styles.axis}>
         {years.map((y) => (
-          <Text key={y.year} style={[styles.year, { left: y.x - 16 }]}>
+          <Text key={y.year} style={[styles.year, { left: SIDE + y.x - 16 }]}>
             {y.year}
           </Text>
         ))}
@@ -141,9 +143,10 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, paddingTop: 16 },
+  wrap: { flex: 1, paddingTop: 8 },
   eventLabel: { position: 'absolute', top: 0, width: 120, textAlign: 'center', fontFamily: Typography.family.regular, fontSize: 11, color: Colors.dangerDark },
-  touch: { height: 44, justifyContent: 'center' },
+  // The whole zone is a swipe target (much taller and wider than the thin track).
+  touch: { height: 72, justifyContent: 'center', paddingHorizontal: SIDE },
   track: { height: TRACK_H, borderRadius: TRACK_H / 2, overflow: 'visible', backgroundColor: '#EAD9D4', justifyContent: 'center' },
   event: { position: 'absolute', top: -5, width: 2, height: TRACK_H + 10, backgroundColor: Colors.ink, borderRadius: 1 },
   thumb: {
@@ -163,7 +166,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  thumbDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.coral },
+  thumbDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.coral },
   axis: { height: 16, marginTop: -2 },
   year: {
     position: 'absolute',

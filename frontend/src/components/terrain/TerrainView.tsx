@@ -135,6 +135,9 @@ export function TerrainView({ data, frameIndex, layers, rotate, resetKey, bottom
         scrollEnabled={false}
         bounces={false}
         setBuiltInZoomControls={false}
+        allowsLinkPreview={false}
+        dataDetectorTypes="none"
+        textInteractionEnabled={false}
         style={styles.web}
         containerStyle={styles.web}
         accessibilityLabel="3D terrain view of the glacial lake. Drag to rotate, pinch to zoom."
