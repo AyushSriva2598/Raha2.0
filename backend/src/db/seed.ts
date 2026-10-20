@@ -47,7 +47,7 @@ async function seed() {
     // Seed Zones
     await pool.query(
       `INSERT INTO zones (id, lake_id, name, basin, elevation_m, distance_from_lake_km, population_estimate, arrival_window_min, arrival_window_max)
-       VALUES ('dingboche-zone', 'imja-tsho', 'Dingboche Valley Floodplain', 'Dudh Koshi River Basin', 4410, 8.5, 650, 35, 65)
+       VALUES ('chungthang-zone', 'south-lhonak', 'Chungthang Valley Floodplain', 'Teesta River Basin', 1790, 55, 650, 35, 65)
        ON CONFLICT (id) DO NOTHING;`
     );
 
@@ -66,7 +66,7 @@ async function seed() {
           sp.type,
           sp.coordinates.longitude,
           sp.coordinates.latitude,
-          sp.elevationGainM + 4410,
+          sp.elevationGainM + 1790,
           sp.elevationGainM,
           sp.walkingTimeMinutes,
           sp.capacityPct,

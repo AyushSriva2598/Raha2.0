@@ -17,6 +17,8 @@ import routesRouter from './routes/routes.js';
 import authRouter from './routes/auth.js';
 import internalRouter from './routes/internal.js';
 import realtimeRouter from './routes/realtime.js';
+import feedRouter from './routes/feed.js';
+import glofRouter from './routes/glof.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -62,6 +64,8 @@ app.use('/api/routes', routesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/internal', internalRouter);
 app.use('/api/realtime', realtimeRouter);
+app.use('/api/feed', feedRouter);
+app.use('/api/glof', glofRouter);
 
 // Global 404 handler
 app.use((_req, res) => {

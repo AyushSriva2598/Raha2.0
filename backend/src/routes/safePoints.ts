@@ -14,7 +14,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/safe-points/nearest?lat=27.89&lon=86.83&limit=5
+// GET /api/safe-points/nearest?lat=27.60&lon=88.64&limit=5
 router.get('/nearest', async (req: Request, res: Response) => {
   try {
     const lat = parseFloat(req.query.lat as string);

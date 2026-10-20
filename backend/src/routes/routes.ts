@@ -20,10 +20,10 @@ router.post('/calculate', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/routes/offline-pack?zoneId=dingboche-zone
+// GET /api/routes/offline-pack?zoneId=chungthang-zone
 router.get('/offline-pack', async (req: Request, res: Response) => {
   try {
-    const zoneId = (req.query.zoneId as string) || 'dingboche-zone';
+    const zoneId = (req.query.zoneId as string) || 'chungthang-zone';
     const safePoints = await db.getSafePoints(zoneId);
 
     // GeoJSON FeatureCollection containing evacuation routes and safe shelters
