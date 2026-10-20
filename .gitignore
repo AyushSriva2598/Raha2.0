@@ -42,3 +42,26 @@ example
 # generated native folders
 /ios
 /android
+
+# secrets and credentials (never commit; keep real values in .env files only)
+.env.*
+!.env.example
+*.keystore
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+credentials*.json
+
+# local tool state
+.impeccable/
+.claude/settings.local.json
+.claude/worktrees/
+.idea/
+
+# logs and coverage
+*.log
+coverage/
+
+# personal screenshots used as design references
+WhatsApp Image*
+Screenshot*
