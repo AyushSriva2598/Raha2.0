@@ -80,7 +80,7 @@ export default function TerrainScreen() {
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speedIdx, setSpeedIdx] = useState(1);
-  const [layers, setLayers] = useState<TerrainLayers>({ satellite: false, history: true, baseline: true });
+  const [layers, setLayers] = useState<TerrainLayers>({ satellite: true, history: true, baseline: true });
   const [rotate, setRotate] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [sheetIndex, setSheetIndex] = useState(0);
