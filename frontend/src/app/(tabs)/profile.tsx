@@ -30,6 +30,7 @@ import {
   Signal,
 } from 'lucide-react-native';
 import { LanguageCode } from '@/i18n/translations';
+import { BackendCheck } from '@/components/common/BackendCheck';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -480,6 +481,8 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        {__DEV__ && <BackendCheck />}
 
       </ScrollView>
 
