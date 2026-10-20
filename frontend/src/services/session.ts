@@ -1,3 +1,4 @@
+import { requireOptionalNativeModule } from 'expo';
 import type { UserProfile } from '@/types';
 
 type SecureStoreModule = typeof import('expo-secure-store');
@@ -8,12 +9,17 @@ type SecureStoreModule = typeof import('expo-secure-store');
 let secureStore: SecureStoreModule | null | undefined;
 function keychain(): SecureStoreModule | null {
   if (secureStore !== undefined) return secureStore;
+  // Ask for the native module first: requiring the package without it prints a red error.
+  if (!requireOptionalNativeModule('ExpoSecureStore')) {
+    secureStore = null;
+    console.log('[session] expo-secure-store is not in this build; the session is kept in memory only.');
+    return secureStore;
+  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     secureStore = require('expo-secure-store') as SecureStoreModule;
   } catch {
     secureStore = null;
-    console.log('[session] expo-secure-store is not in this build; the session is kept in memory only.');
   }
   return secureStore;
 }
