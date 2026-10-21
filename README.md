@@ -94,3 +94,7 @@ npm run lint:backend
 5. **Decoupled Backend Architecture**:
    - Clean `IGlacialThreatApiClient` interface in [`frontend/src/services/api.ts`](file:///Users/garv/Documents/Projects/Raha/frontend/src/services/api.ts).
    - Effortless swap between simulated offline mock data and live AWS AppSync GraphQL / IoT endpoints.
+
+
+6 Built by Ayush Srivastava
+
