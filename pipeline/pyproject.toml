@@ -1,0 +1,11 @@
+[project]
+name = "glof-pipeline"
+version = "0.1.0"
+description = "Sentinel-2 glacial lake outlines and risk timeline for the Raha app"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+markers = ["regression: compares a fresh build with the GLOoF reference archive (needs network, slow)"]
+addopts = "-m 'not regression'"

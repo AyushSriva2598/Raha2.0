@@ -72,3 +72,13 @@ Screenshot*
 # generated native projects (Continuous Native Generation)
 frontend/android/
 frontend/ios/
+
+# pipeline build artefacts
+pipeline/.venv/
+pipeline/out/
+pipeline/build/
+__pycache__/
+.pytest_cache/
+
+# local last-good copy of lake data
+.cache/

@@ -1,0 +1,7 @@
+# Runtime dependencies of the ingest Lambda (boto3 is provided by the Lambda runtime).
+# No geopandas/pandas: shapely + pyproj cover everything and keep the zip small.
+numpy>=1.26
+rasterio>=1.4
+shapely>=2.0
+pyproj>=3.6
+pystac-client>=0.8
