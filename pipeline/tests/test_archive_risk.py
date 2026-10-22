@@ -88,3 +88,60 @@ def test_warning_is_never_cleared_automatically():
     frames += [frame(f"2021-10-{d:02d}", 150) for d in (5, 15, 25, 29)]  # back to baseline size
     tl = analyse_archive(doc(frames))
     assert tl["frames"][-1]["level"] in ("WARNING", "EVACUATE")
+
+
+def test_thinning_always_keeps_the_newest_scene():
+    fr = [frame(f"2020-10-{d:02d}", 150) for d in (1, 3, 5)]  # all within 8 days of the first
+    assert [f["date"] for f in thin_frames(fr, 8)] == ["2020-10-01", "2020-10-05"]
+
+
+class _Boom(RuntimeError):
+    pass
+
+
+def _builder(monkeypatch, outcomes):
+    from glof.archive import ArchiveBuilder
+    from glof.config import Settings
+
+    monkeypatch.setattr("glof.archive.time.sleep", lambda s: None)
+    b = ArchiveBuilder(Settings(), finder=None)
+    calls = iter(outcomes)
+
+    def analyse(lake, scene):
+        o = next(calls)
+        if isinstance(o, Exception):
+            raise o
+        return o
+
+    monkeypatch.setattr(b, "analyse", analyse)
+    return b
+
+
+class _Scene:
+    item_id = "S2_test"
+
+
+def test_transient_read_failures_are_retried(monkeypatch):
+    b = _builder(monkeypatch, [_Boom("timeout"), _Boom("timeout"), {"date": "2020-10-01"}])
+    assert b._analyse_safe(None, _Scene()) == {"date": "2020-10-01"}
+    assert b.errors == []
+
+
+def test_a_scene_that_never_reads_is_recorded_as_an_error_not_as_cloud(monkeypatch):
+    b = _builder(monkeypatch, [_Boom("x")] * 3)
+    assert b._analyse_safe(None, _Scene()) is None
+    assert b.errors == ["S2_test"]
+
+
+def test_deterministic_skips_are_not_errors(monkeypatch):
+    from glof.raster import GeospatialError
+
+    b = _builder(monkeypatch, [GeospatialError("window extends past the tile edge")])
+    assert b._analyse_safe(None, _Scene()) is None
+    assert b.errors == []
+
+
+def test_an_asset_missing_from_the_bucket_is_a_permanent_skip(monkeypatch):
+    b = _builder(monkeypatch, [_Boom("'/vsis3/x/B03.jp2' does not exist in the file system")])
+    assert b._analyse_safe(None, _Scene()) is None
+    assert b.errors == []

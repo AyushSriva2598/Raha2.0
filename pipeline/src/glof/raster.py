@@ -23,6 +23,10 @@ GDAL_ENV = {
     "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".tif,.tiff",
     "GDAL_HTTP_MAX_RETRY": "3",
     "GDAL_HTTP_RETRY_DELAY": "1",
+    # A hung range read must fail (and the scene be skipped), not stall a whole build or burn a
+    # Lambda's 15-minute budget.
+    "GDAL_HTTP_CONNECTTIMEOUT": "30",
+    "GDAL_HTTP_TIMEOUT": "120",
     "VSI_CACHE": "TRUE",
 }
 

@@ -52,12 +52,17 @@ def main(argv: list[str] | None = None) -> int:
         elif a.command == "update":
             doc, fresh = builder.update(lake, store.load(f"archive/{lake.id}"))
             print(f"  {len(fresh)} new frame(s)")
+            if builder.errors:
+                print(f"  WARNING: {len(builder.errors)} scene(s) could not be read; they will be retried next run", flush=True)
             store.save(f"archive/{lake.id}", doc)
         else:
             start = datetime.fromisoformat(a.start or s.archive_start).replace(tzinfo=timezone.utc)
             end = datetime.fromisoformat(a.end).replace(tzinfo=timezone.utc) if a.end else datetime.now(timezone.utc)
             frames = builder.finalise(lake, builder.build_frames(lake, start, end, workers=a.workers, progress=progress))
             doc = builder.document(lake, frames)
+            if builder.errors:
+                print(f"  WARNING: {len(builder.errors)} scene(s) could not be read after retries; the archive may be "
+                      f"missing observations. Re-run to fill them in: {', '.join(builder.errors[:5])}...", flush=True)
             store.save(f"archive/{lake.id}", doc)
         if not doc["frames"]:
             print("  no usable frames; nothing published")

@@ -54,8 +54,11 @@ def process_lake(
     now: datetime,
 ) -> dict[str, Any]:
     doc, fresh = builder.update(lake, store.load(f"archive/{lake.id}"), now=now)
+    read_errors = list(getattr(builder, "errors", []))
+    if read_errors:  # visible in the report and logs; the alarm on ingest errors watches for it
+        log.warning("%s: %d scene(s) could not be read: %s", lake.id, len(read_errors), read_errors[:5])
     if not doc["frames"]:
-        return {"new_frames": [], "frames_total": 0, "level": None, "events": []}
+        return {"new_frames": [], "frames_total": 0, "level": None, "events": [], "read_errors": read_errors}
 
     timeline = analyse_archive(doc)
     latest = timeline["frames"][-1]
@@ -105,6 +108,7 @@ def process_lake(
         "level": level,
         "announced_level": (new_state or state or {}).get("notified_level"),
         "events": [{"to": e["to"], "drill": e["drill"]} for e in sent],
+        "read_errors": read_errors,
         "doc": doc,
     }
 

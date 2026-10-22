@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import statistics
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable
@@ -26,6 +27,7 @@ from .vectorize import select_lake
 
 log = logging.getLogger(__name__)
 SCHEMA = 2
+READ_ATTEMPTS = 3  # transient network failures are retried; a deterministic skip is not
 MIN_CONTEXT_WATER_M2 = 10_000  # other lakes nearby (>= 1 ha) kept for context
 
 
@@ -36,7 +38,7 @@ def in_season(d: date, season: tuple[str, str]) -> bool:
 
 def thin_frames(frames: list[dict[str, Any]], min_gap_days: int, jump_pct: float = 8.0) -> list[dict[str, Any]]:
     """Keep a frame when min_gap_days have passed or the lake area jumped. Frames must be date-sorted.
-    Sudden changes (a drainage) are never thinned away."""
+    Sudden changes (a drainage) and the newest frame are never thinned away."""
     kept: list[dict[str, Any]] = []
     for f in frames:
         if not kept:
@@ -48,6 +50,10 @@ def thin_frames(frames: list[dict[str, Any]], min_gap_days: int, jump_pct: float
         jump = abs(a1 - a0) / a0 * 100 if a0 else 100.0
         if gap >= min_gap_days or jump >= jump_pct:
             kept.append(f)
+    # The newest observation is never thinned away: a monitor must evaluate the latest scene, and
+    # dropping it could delay an escalation by up to min_gap_days.
+    if frames and kept[-1] is not frames[-1]:
+        kept.append(frames[-1])
     return kept
 
 
@@ -64,6 +70,9 @@ class ArchiveBuilder:
     def __init__(self, settings: Settings, finder: StacSceneFinder) -> None:
         self._s = settings
         self._finder = finder
+        # Scenes that could not be READ (network), as opposed to cloudy or unusable ones. A non-empty
+        # list means the archive may be missing observations and callers must say so.
+        self.errors: list[str] = []
 
     def _params(self) -> WaterParams:
         s = self._s
@@ -135,12 +144,20 @@ class ArchiveBuilder:
         }
 
     def _analyse_safe(self, lake: Lake, scene: SceneRef) -> dict[str, Any] | None:
-        try:
-            return self.analyse(lake, scene)
-        except GeospatialError as exc:
-            log.info("skip %s: %s", scene.item_id, exc)
-        except Exception as exc:  # a network blip on one COG must not sink a multi-year build
-            log.warning("skip %s: %s", scene.item_id, exc)
+        for attempt in range(READ_ATTEMPTS):
+            try:
+                return self.analyse(lake, scene)
+            except GeospatialError as exc:  # deterministic (tile edge, no overlap): retrying cannot help
+                log.info("skip %s: %s", scene.item_id, exc)
+                return None
+            except Exception as exc:
+                if "does not exist" in str(exc):  # the catalog lists a file the bucket does not hold: permanent
+                    log.info("skip %s: asset missing from the bucket", scene.item_id)
+                    return None  # a network blip on one COG must not sink a multi-year build
+                log.warning("read failed for %s (attempt %d/%d): %s", scene.item_id, attempt + 1, READ_ATTEMPTS, exc)
+                if attempt + 1 < READ_ATTEMPTS:
+                    time.sleep(2 * (attempt + 1))
+        self.errors.append(scene.item_id)
         return None
 
     def build_frames(
@@ -148,6 +165,7 @@ class ArchiveBuilder:
         progress: Callable[[int, int, dict | None], None] | None = None,
     ) -> list[dict[str, Any]]:
         scenes = self.candidates(lake, start, end)
+        self.errors = []
         out: list[dict[str, Any]] = []
         with ThreadPoolExecutor(max_workers=workers) as pool:
             for i, fr in enumerate(pool.map(lambda sc: self._analyse_safe(lake, sc), scenes)):
