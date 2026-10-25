@@ -89,9 +89,11 @@ export class DatabaseStore {
   async syncAssessmentFromAws(payload: Partial<LakeAssessment>): Promise<LakeAssessment> {
     const level = payload.level || this.currentLevel;
     this.currentLevel = level;
+    // Optional fields the sender left out must not overwrite the current values with undefined.
+    const provided = Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined));
     this.activeAssessment = {
       ...this.activeAssessment,
-      ...payload,
+      ...provided,
       timestamp: new Date().toISOString(),
     };
     return { ...this.activeAssessment };
