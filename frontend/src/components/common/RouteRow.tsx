@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   durationText: {
+    fontVariant: ['tabular-nums'],
     fontFamily: Typography.family.bold,
     fontSize: Typography.sizes.title,
     color: Colors.ink,

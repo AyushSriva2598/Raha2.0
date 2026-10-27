@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,12 @@ import {
   Linking,
   Platform,
   Modal,
-  ScrollView,
 } from 'react-native';
+import BottomSheet, {
+  BottomSheetFooter,
+  BottomSheetScrollView,
+  type BottomSheetFooterProps,
+} from '@gorhom/bottom-sheet';
 import { Navigation, AlertTriangle, ShieldCheck } from 'lucide-react-native';
 import { Colors, Typography, Radii, Shadows, Spacing } from '@/constants/theme';
 import { RouteRow } from '@/components/common/RouteRow';
@@ -59,9 +63,9 @@ export function RouteBottomSheet({
     const lat = destinationCoordinate.latitude;
     const lng = destinationCoordinate.longitude;
 
-    const googleMapsNativeUrl = `google.navigation:q=${lat},${lng}&mode=w`;
+    const googleMapsNativeUrl = `google.navigation:q=${lat},${lng}&mode=d`;
     const googleMapsWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-    const appleMapsUrl = `maps:0,0?q=${encodeURIComponent(destinationName)}@${lat},${lng}&dirflg=w`;
+    const appleMapsUrl = `maps:0,0?q=${encodeURIComponent(destinationName)}@${lat},${lng}&dirflg=d`;
 
     try {
       if (Platform.OS === 'android') {
@@ -84,70 +88,80 @@ export function RouteBottomSheet({
     }
   };
 
-  const safestRoute = routes.find((r) => r.type === 'safest');
+  // A road that does not cross a warning zone, offered if the chosen one does.
+  const saferRoute = routes.find((r) => !r.hasWarningZoneCrossing && r.id !== selectedRoute?.id);
+
+  // A real sheet: drag between a compact view and the full list. Start and Change stay pinned to the
+  // bottom so they are always reachable, and lift clear of the raised SOS button.
+  const snapPoints = useMemo(() => ['36%', '64%'], []);
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props}>
+        <View style={styles.footer}>
+          <PrimaryButton title="Change" variant="outlineCoral" onPress={onChange} height={52} style={styles.changeButton} />
+          <PrimaryButton
+            title={getButtonTitle()}
+            variant="filled"
+            icon={<Navigation size={18} color="#FFFFFF" />}
+            onPress={handleStartTripHandoff}
+            height={52}
+            style={styles.startButton}
+          />
+        </View>
+      </BottomSheetFooter>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onChange, selectedRoute?.id, isWarningConfirmOpen]
+  );
 
   return (
     <>
-      <View style={styles.panel}>
-        <View style={styles.dragIndicator} />
-        <View style={styles.headerRow}>
-          <Text style={styles.sheetTitle}>Safe routes to {destinationName}</Text>
-          {noHazardsOnAnyRoute && (
-            <View style={styles.calmPill}>
-              <ShieldCheck size={14} color={Colors.safe} />
-              <Text style={styles.calmText}>No flood zones</Text>
+      <BottomSheet
+        index={0}
+        snapPoints={snapPoints}
+        enableDynamicSizing={false}
+        footerComponent={routes.length > 0 ? renderFooter : undefined}
+        handleIndicatorStyle={styles.dragIndicator}
+        backgroundStyle={styles.sheetBackground}
+        style={Shadows.sheet}>
+        <BottomSheetScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerRow}>
+            <Text style={styles.sheetTitle} textBreakStrategy="balanced">
+              Roads to {destinationName}
+            </Text>
+            {noHazardsOnAnyRoute && (
+              <View style={styles.calmPill}>
+                <ShieldCheck size={14} color={Colors.safe} />
+                <Text style={styles.calmText}>No flood zones</Text>
+              </View>
+            )}
+          </View>
+
+          {isSameLocation && (
+            <View style={styles.edgeStateBox}>
+              <Text style={styles.edgeStateTitle}>You are already there</Text>
+              <Text style={styles.edgeStateSubtitle}>Choose a different place to get a route.</Text>
             </View>
           )}
-        </View>
 
-        {isSameLocation && (
-          <View style={styles.edgeStateBox}>
-            <Text style={styles.edgeStateTitle}>Origin equals destination</Text>
-            <Text style={styles.edgeStateSubtitle}>Choose a different place to compute routes.</Text>
-          </View>
-        )}
-
-        {!isSameLocation && routes.length === 0 && (
-          <View style={styles.edgeStateBox}>
-            <Text style={styles.edgeStateTitle}>No road route found</Text>
-            <Text style={styles.edgeStateSubtitle}>
-              No driving road connects these two places.
-            </Text>
-          </View>
-        )}
-
-        {!isSameLocation && routes.length > 0 && (
-          <>
-            <ScrollView style={styles.routesScroll} showsVerticalScrollIndicator={false}>
-              {routes.map((route) => (
-                <RouteRow
-                  key={route.id}
-                  route={route}
-                  isSelected={route.id === selectedRouteId}
-                  onSelect={() => onSelectRoute(route.id)}
-                />
-              ))}
-            </ScrollView>
-            <View style={styles.actionBar}>
-              <PrimaryButton
-                title="Change"
-                variant="outlineCoral"
-                onPress={onChange}
-                height={52}
-                style={styles.changeButton}
-              />
-              <PrimaryButton
-                title={getButtonTitle()}
-                variant="filled"
-                icon={<Navigation size={18} color="#FFFFFF" />}
-                onPress={handleStartTripHandoff}
-                height={52}
-                style={styles.startButton}
-              />
+          {!isSameLocation && routes.length === 0 && (
+            <View style={styles.edgeStateBox}>
+              <Text style={styles.edgeStateTitle}>No road route found</Text>
+              <Text style={styles.edgeStateSubtitle}>No driving road connects these two places.</Text>
             </View>
-          </>
-        )}
-      </View>
+          )}
+
+          {!isSameLocation &&
+            routes.map((route) => (
+              <RouteRow
+                key={route.id}
+                route={route}
+                isSelected={route.id === selectedRouteId}
+                onSelect={() => onSelectRoute(route.id)}
+              />
+            ))}
+        </BottomSheetScrollView>
+      </BottomSheet>
 
       {/* Warning Confirmation Modal Sheet */}
       <Modal visible={isWarningConfirmOpen} transparent animationType="fade">
@@ -156,22 +170,24 @@ export function RouteBottomSheet({
             <View style={styles.modalIconBox}>
               <AlertTriangle size={32} color={Colors.danger} />
             </View>
-            <Text style={styles.modalTitle}>Flood Hazard Warning</Text>
+            <Text style={styles.modalTitle} textBreakStrategy="balanced">
+              This road crosses a flood warning zone
+            </Text>
             <Text style={styles.modalBody}>
-              This route enters an active glacial lake outburst flood zone. Proceeding along the
-              valley bed exposes you to high-velocity flood debris waves.
+              {saferRoute
+                ? 'Another road avoids it. Take that one if you can.'
+                : 'Every road found crosses a warning zone. If you can, choose a place that keeps you away from the river.'}
             </Text>
 
             <View style={styles.modalActions}>
               {/* Default Primary Action: Switch to Safest Route */}
               <PrimaryButton
-                title="Switch to Safest Route"
+                title={saferRoute ? 'Use the safer road' : 'Choose another place'}
                 variant="filled"
                 onPress={() => {
-                  if (safestRoute) {
-                    onSelectRoute(safestRoute.id);
-                  }
                   setIsWarningConfirmOpen(false);
+                  if (saferRoute) onSelectRoute(saferRoute.id);
+                  else onChange();
                 }}
                 height={52}
                 style={{ width: '100%', marginBottom: 10 }}
@@ -179,7 +195,7 @@ export function RouteBottomSheet({
 
               {/* Secondary Action: Proceed Anyway */}
               <PrimaryButton
-                title="Continue Anyway (High Risk)"
+                title="Go this way anyway"
                 variant="danger"
                 onPress={() => {
                   setIsWarningConfirmOpen(false);
@@ -197,21 +213,16 @@ export function RouteBottomSheet({
 }
 
 const styles = StyleSheet.create({
-  panel: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radii.sheet,
-    borderTopRightRadius: Radii.sheet,
+  sheetBackground: { backgroundColor: Colors.surface, borderTopLeftRadius: Radii.sheet, borderTopRightRadius: Radii.sheet },
+  sheetContent: { paddingHorizontal: Spacing.sidePadding, paddingBottom: 120 },
+  footer: {
+    flexDirection: 'row',
+    gap: 10,
     paddingHorizontal: Spacing.sidePadding,
-    paddingBottom: 12,
-    maxHeight: '48%',
-    ...Shadows.sheet,
+    paddingTop: 10,
+    paddingBottom: 34,
+    backgroundColor: Colors.surface,
   },
-  routesScroll: { flexGrow: 0 },
-  actionBar: { flexDirection: 'row', gap: 10, marginTop: 6 },
   changeButton: { width: 110 },
   dragIndicator: {
     width: 44,
