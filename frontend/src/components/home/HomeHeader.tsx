@@ -40,6 +40,7 @@ export function HomeHeader({
         {/* Left: Menu button */}
         <Pressable
           onPress={onToggleMenu}
+          hitSlop={4}
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Open basin menu">
@@ -50,6 +51,7 @@ export function HomeHeader({
         <View style={styles.rightGroup}>
           <Pressable
             onPress={onToggleLayers}
+            hitSlop={4}
             style={({ pressed }) => [
               styles.iconButton,
               mapType === 'satellite' && styles.layersActive,
@@ -66,6 +68,7 @@ export function HomeHeader({
 
           <Pressable
             onPress={() => router.push('/activity' as any)}
+            hitSlop={4}
             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel="Open activity">
@@ -74,6 +77,7 @@ export function HomeHeader({
 
           <Pressable
             onPress={() => router.push('/profile' as any)}
+            hitSlop={4}
             style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel="Open profile">

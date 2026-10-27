@@ -114,6 +114,7 @@ export function PlaceSearchModal({
             <Text style={styles.title}>{title}</Text>
             <Pressable
               onPress={onClose}
+              hitSlop={6}
               style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}>
               <X size={20} color={Colors.ink} />
             </Pressable>

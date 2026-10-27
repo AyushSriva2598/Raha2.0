@@ -44,6 +44,7 @@ export function WhatToDoModal({
             </View>
             <Pressable
               onPress={onClose}
+              hitSlop={6}
               style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel="Close guidance">

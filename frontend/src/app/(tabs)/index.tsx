@@ -116,6 +116,7 @@ export default function HomeScreen() {
               <Text style={styles.menuTitle}>Raha Mission Control</Text>
               <Pressable
                 onPress={() => setIsMenuOpen(false)}
+                hitSlop={8}
                 style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}>
                 <X size={20} color={Colors.ink} />
               </Pressable>

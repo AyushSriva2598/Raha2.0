@@ -49,6 +49,7 @@ export function AddEmergencyContactModal() {
               <Text style={styles.title}>Add Emergency Contact</Text>
             </View>
             <Pressable
+              hitSlop={8}
               style={styles.closeBtn}
               onPress={() => openAddContactModal(false)}>
               <X size={18} color={Colors.slateFog} />
