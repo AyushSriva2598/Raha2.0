@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Modal, Text, Pressable } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
+import { HomeFabs } from '@/components/home/HomeFabs';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { HomeMap } from '@/components/home/HomeMap';
 import {
@@ -84,9 +85,8 @@ export default function HomeScreen() {
       {/* 2. Floating Minimal Header Over White Fade */}
       <HomeHeader
         onToggleMenu={() => setIsMenuOpen(true)}
-        onToggleLayers={toggleMapLayers}
-        mapType={mapType}
       />
+      <HomeFabs mapType={mapType} onToggleLayers={toggleMapLayers} />
 
       {/* 3. Bottom Sheet in Front (120px / 424px / ~85%) */}
       <HomeBottomSheet

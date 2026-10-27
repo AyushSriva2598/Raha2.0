@@ -5,26 +5,30 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import { Menu, Layers, Bell } from 'lucide-react-native';
+import { ChevronDown, MapPin, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors, Typography, Shadows } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
+import type { AlertLevel } from '@/types';
 
 export interface HomeHeaderProps {
   onToggleMenu?: () => void;
-  onToggleLayers?: () => void;
-  mapType?: 'standard' | 'satellite' | 'terrain';
 }
 
-export function HomeHeader({
-  onToggleMenu,
-  onToggleLayers,
-  mapType = 'terrain',
-}: HomeHeaderProps) {
-  const insets = useSafeAreaInsets();
-  const { userProfile } = useAppStore();
+const LEVEL_COLOR: Record<AlertLevel, string> = {
+  CLEAR: Colors.safe,
+  WATCH: Colors.watch,
+  WARNING: Colors.danger,
+  EVACUATE: Colors.danger,
+};
 
+export function HomeHeader({ onToggleMenu }: HomeHeaderProps) {
+  const insets = useSafeAreaInsets();
+  const { userProfile, activeLake, alertLevel, t } = useAppStore();
+  const strings = t();
+
+  const firstName = userProfile?.name?.trim().split(/\s+/)[0] ?? '';
   const userInitials = userProfile?.name
     ? userProfile.name
         .split(' ')
@@ -32,58 +36,48 @@ export function HomeHeader({
         .join('')
         .slice(0, 2)
         .toUpperCase()
-    : 'PS';
+    : '';
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? strings.home.greetingMorning : hour < 18 ? strings.home.greetingAfternoon : strings.home.greetingEvening;
+  const levelLabel = strings.alertLevels[alertLevel.toLowerCase() as keyof typeof strings.alertLevels] ?? alertLevel;
+  const haven = activeLake.primarySafeHaven;
 
   return (
-    <View style={[styles.wrapper, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
+    <View pointerEvents="box-none" style={[styles.wrapper, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
       <View style={styles.headerRow}>
-        {/* Left: Menu button */}
         <Pressable
           onPress={onToggleMenu}
-          hitSlop={4}
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.statusCard, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Open basin menu">
-          <Menu size={20} color={Colors.ink} strokeWidth={2.4} />
+          accessibilityLabel={`${greeting} ${firstName}. ${activeLake.name}, ${levelLabel}. Open lake menu`}>
+          <View style={[styles.dot, { backgroundColor: LEVEL_COLOR[alertLevel] }]} />
+          <View style={styles.statusText}>
+            <Text style={styles.greeting} numberOfLines={1}>
+              {firstName ? `${greeting}, ${firstName}` : greeting}
+            </Text>
+            <Text style={styles.statusLine} numberOfLines={1}>
+              {activeLake.name} · {levelLabel}
+            </Text>
+          </View>
+          <ChevronDown size={18} color={Colors.text3} />
         </Pressable>
 
-        {/* Right side group: Layers toggle and Profile avatar */}
-        <View style={styles.rightGroup}>
-          <Pressable
-            onPress={onToggleLayers}
-            hitSlop={4}
-            style={({ pressed }) => [
-              styles.iconButton,
-              mapType === 'satellite' && styles.layersActive,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={`Toggle map layer, currently ${mapType}`}>
-            <Layers
-              size={19}
-              color={mapType === 'satellite' ? Colors.surface : Colors.ink}
-              strokeWidth={2.2}
-            />
-          </Pressable>
+        <Pressable
+          onPress={() => router.push('/profile' as any)}
+          hitSlop={4}
+          style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Open profile">
+          {userInitials ? <Text style={styles.avatarText}>{userInitials}</Text> : <User size={18} color={Colors.coralDeep} />}
+        </Pressable>
+      </View>
 
-          <Pressable
-            onPress={() => router.push('/activity' as any)}
-            hitSlop={4}
-            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Open activity">
-            <Bell size={19} color={Colors.ink} strokeWidth={2.2} />
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/profile' as any)}
-            hitSlop={4}
-            style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Open profile">
-            <Text style={styles.avatarText}>{userInitials}</Text>
-          </Pressable>
-        </View>
+      <View style={styles.pill} accessibilityLabel={`${strings.home.safeGround}: ${haven.name}`}>
+        <MapPin size={16} color={Colors.safe} strokeWidth={2.4} />
+        <Text style={styles.pillText} numberOfLines={1}>
+          {strings.home.safeGround} <Text style={styles.pillStrong}>{haven.name}</Text> · {haven.distanceKm} km · {haven.walkTimeMinutes} min
+        </Text>
       </View>
     </View>
   );
@@ -110,9 +104,44 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 44,
+    gap: 10,
   },
+  statusCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 28,
+    borderCurve: 'continuous',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.card,
+  },
+  dot: { width: 12, height: 12, borderRadius: 6 },
+  statusText: { flex: 1 },
+  greeting: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.body, color: Colors.ink },
+  statusLine: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, color: Colors.text2 },
+  pill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: '86%',
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 22,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.card,
+  },
+  pillText: { flexShrink: 1, fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, color: Colors.text2, fontVariant: ['tabular-nums'] },
+  pillStrong: { fontFamily: Typography.family.bold, color: Colors.ink },
   iconButton: {
     width: 40,
     height: 40,
@@ -144,9 +173,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   avatarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.coralSoft,
     alignItems: 'center',
     justifyContent: 'center',

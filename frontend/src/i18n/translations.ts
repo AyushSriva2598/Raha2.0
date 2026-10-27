@@ -80,6 +80,13 @@ export interface Translations {
     step3Desc: string;
     authorityBroadcast: string;
     authorityCode: string;
+    greetingMorning: string;
+    greetingAfternoon: string;
+    greetingEvening: string;
+    safeGround: string;
+    mapLayers: string;
+    activityUpdates: string;
+    lake3d: string;
   };
   map: {
     evacuateMode: string;
@@ -213,6 +220,13 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       step3Desc: 'High sediment surge expected within the first 120 minutes. Do not cross bridges.',
       authorityBroadcast: 'Flash flood alert dispatched by Dept of Hydrology & Meteorology',
       authorityCode: 'Authority Broadcast Code: NEP-GLOF-ZONE4 • Active Frequency 148.5 MHz',
+      greetingMorning: 'Good morning',
+      greetingAfternoon: 'Good afternoon',
+      greetingEvening: 'Good evening',
+      safeGround: 'Safe ground',
+      mapLayers: 'Change map layer',
+      activityUpdates: 'Activity and updates',
+      lake3d: '3D lake view',
     },
     map: {
       evacuateMode: 'Evacuate',
@@ -344,6 +358,13 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       step3Desc: 'शुरुआती 120 मिनट में तेज बहाव आने की आशंका है।',
       authorityBroadcast: 'जल विज्ञान एवं मौसम विज्ञान विभाग द्वारा चेतावनी जारी',
       authorityCode: 'प्रसारण कोड: NEP-GLOF-ZONE4 • आवृत्ति 148.5 MHz',
+      greetingMorning: 'सुप्रभात',
+      greetingAfternoon: 'नमस्कार',
+      greetingEvening: 'शुभ संध्या',
+      safeGround: 'सुरक्षित स्थान',
+      mapLayers: 'मानचित्र की परत बदलें',
+      activityUpdates: 'गतिविधि और अपडेट',
+      lake3d: 'झील का 3D दृश्य',
     },
     map: {
       evacuateMode: 'निकासी',
@@ -475,6 +496,13 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       step3Desc: 'पहिलो १२० मिनेटमा भीषण बाढी आउन सक्ने सम्भावना छ।',
       authorityBroadcast: 'जल तथा मौसम विज्ञान विभागद्वारा बाढी सूचना जारी',
       authorityCode: 'प्रसारण कोड: NEP-GLOF-ZONE4 • फ्रिक्वेन्सी १४८.५ MHz',
+      greetingMorning: 'शुभ प्रभात',
+      greetingAfternoon: 'नमस्कार',
+      greetingEvening: 'शुभ साँझ',
+      safeGround: 'सुरक्षित ठाउँ',
+      mapLayers: 'नक्साको तह बदल्नुहोस्',
+      activityUpdates: 'गतिविधि र अपडेट',
+      lake3d: 'ताल को 3D दृश्य',
     },
     map: {
       evacuateMode: 'निकासी',
