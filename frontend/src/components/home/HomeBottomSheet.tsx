@@ -30,8 +30,10 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SosButton } from '@/components/common/SosButton';
 import { HomeUpdates } from '@/components/home/HomeUpdates';
 import { LakeConfig } from '@/constants/lakes';
-import { SafePoint, EventLog } from '@/types';
+import { SafePoint, EventLog, SosContact } from '@/types';
 import { useAppStore } from '@/store/useAppStore';
+
+const NO_CONTACTS: SosContact[] = [];
 
 export type HomeHazardState =
   | 'FLOOD_PATH'
@@ -71,7 +73,8 @@ export function HomeBottomSheet({
   // Snap points: peek (the one-line status stays readable above the raised SOS button), default (map
   // stays mostly visible), expanded. Dynamic sizing is off so the sheet only ever rests on these three.
   const snapPoints = useMemo(() => [140, '42%', '80%'], []);
-  const contacts = useAppStore((st) => st.userProfile?.contacts ?? []);
+  // Select the stored array itself; a fresh [] inside the selector would change on every read and loop.
+  const contacts = useAppStore((st) => st.userProfile?.contacts) ?? NO_CONTACTS;
   const lakeKm = Math.round(
     haversineKm(lake.coordinates[1], lake.coordinates[0], lake.primarySettlement.coordinates[1], lake.primarySettlement.coordinates[0])
   );
