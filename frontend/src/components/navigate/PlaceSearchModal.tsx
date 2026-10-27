@@ -1,9 +1,9 @@
+import { SwipeSheet } from '@/components/common/SwipeSheet';
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   Pressable,
   FlatList,
@@ -106,9 +106,8 @@ export function PlaceSearchModal({
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
+    <SwipeSheet visible={visible} onClose={onClose} sheetStyle={[styles.sheet, { paddingTop: 0 }]}>
+      <>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
@@ -169,9 +168,8 @@ export function PlaceSearchModal({
               </Pressable>
             )}
           />
-        </View>
-      </View>
-    </Modal>
+      </>
+    </SwipeSheet>
   );
 }
 

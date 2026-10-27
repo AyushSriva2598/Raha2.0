@@ -1,5 +1,6 @@
+import { SwipeSheet } from '@/components/common/SwipeSheet';
 import React from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertTriangle, MapPin, Route, ShieldCheck, Waves } from 'lucide-react-native';
 import { Colors, Radii, Shadows, Typography } from '@/constants/theme';
@@ -26,10 +27,8 @@ export function OfflineMapSheet({ visible, onClose }: OfflineMapSheetProps) {
   const isReady = status === 'ready';
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.handle} />
+    <SwipeSheet visible={visible} onClose={onClose} sheetStyle={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
+      <View style={styles.content}>
         <Text style={styles.title} accessibilityRole="header">
           Download Offline Map
         </Text>
@@ -74,18 +73,18 @@ export function OfflineMapSheet({ visible, onClose }: OfflineMapSheetProps) {
         />
         {isDownloading && <ActivityIndicator style={styles.spinner} color={Colors.coral} />}
       </View>
-    </Modal>
+    </SwipeSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(42, 27, 26, 0.45)' },
+  content: { gap: 14 },
   sheet: {
     backgroundColor: Colors.bg,
     borderTopLeftRadius: Radii.sheet,
     borderTopRightRadius: Radii.sheet,
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 0,
     gap: 14,
     ...Shadows.sheet,
   },

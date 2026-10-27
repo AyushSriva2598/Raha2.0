@@ -1,9 +1,9 @@
+import { SwipeSheet } from '@/components/common/SwipeSheet';
 import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   Pressable,
   ScrollView,
 } from 'react-native';
@@ -31,9 +31,8 @@ export function WhatToDoModal({
   safeHavenName = 'Nangkartshang Ridge Lookout',
 }: WhatToDoModalProps) {
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.sheetCard}>
+    <SwipeSheet visible={visible} onClose={onClose} sheetStyle={[styles.sheetCard, { paddingTop: 0 }]}>
+      <>
           {/* Header */}
           <View style={styles.header}>
             <View>
@@ -121,9 +120,8 @@ export function WhatToDoModal({
               />
             </View>
           </ScrollView>
-        </View>
-      </View>
-    </Modal>
+      </>
+    </SwipeSheet>
   );
 }
 

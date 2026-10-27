@@ -1,9 +1,9 @@
+import { SwipeSheet } from '@/components/common/SwipeSheet';
 import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   Pressable,
   Switch,
@@ -27,8 +27,6 @@ export function AddEmergencyContactModal() {
 
   const relations = ['Sister', 'Mother', 'Brother', 'Kin', 'Spouse', 'Elder'];
 
-  if (!isAddContactModalOpen) return null;
-
   const handleSave = async () => {
     if (!name.trim() || saving) return;
     saveKey.current ??= newIdempotencyKey();
@@ -47,9 +45,11 @@ export function AddEmergencyContactModal() {
   };
 
   return (
-    <Modal visible={isAddContactModalOpen} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
+    <SwipeSheet
+      visible={isAddContactModalOpen}
+      onClose={() => openAddContactModal(false)}
+      sheetStyle={[styles.modalCard, { paddingTop: 0 }]}>
+      <>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
@@ -141,9 +141,8 @@ export function AddEmergencyContactModal() {
             accessibilityState={{ busy: saving }}>
             <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Emergency Kin'}</Text>
           </Pressable>
-        </View>
-      </View>
-    </Modal>
+      </>
+    </SwipeSheet>
   );
 }
 
