@@ -61,9 +61,9 @@ const styles = StyleSheet.create({
   markerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 14,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 18,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     shadowColor: Colors.ink,
@@ -82,14 +82,14 @@ const styles = StyleSheet.create({
     borderColor: Colors.low,
   },
   markerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 5,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    marginRight: 7,
   },
   markerText: {
     fontFamily: Typography.family.bold,
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.ink,
   },
 });

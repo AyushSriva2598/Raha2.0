@@ -16,6 +16,19 @@ export function YouPin() {
   );
 }
 
+/**
+ * A fixed-size ring in the zone's risk colour. The true-radius circle on the map is exact but shrinks
+ * to a speck when zoomed out; this keeps the zone findable at any zoom. It never changes the zone's
+ * real extent, which the circle underneath still shows.
+ */
+export function ZoneBeacon({ color }: { color: string }) {
+  return (
+    <View style={[styles.beacon, { borderColor: color, backgroundColor: `${color}33` }]}>
+      <View style={[styles.beaconCore, { backgroundColor: color }]} />
+    </View>
+  );
+}
+
 export function DestinationPin() {
   return (
     <View style={styles.pinWrap}>
@@ -52,6 +65,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   core: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.coral },
+  beacon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  beaconCore: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: '#FFFFFF' },
   pinWrap: { alignItems: 'center' },
   pinHead: {
     width: 38,

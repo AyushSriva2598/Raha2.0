@@ -1,4 +1,4 @@
-import { YouPin } from '@/components/common/MapPins';
+import { YouPin, ZoneBeacon } from '@/components/common/MapPins';
 import { RAHA_MAP_STYLE } from '@/constants/mapStyle';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
@@ -151,7 +151,17 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           </View>
         </Marker>
 
-        {/* Source lake, visible when zoomed out far enough */}
+        {/* Source lake: a fixed-size ring so it can be found at any zoom, with its name pill on top */}
+        <Marker
+          coordinate={{ latitude: lake.coordinates[1], longitude: lake.coordinates[0] }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          flat={false}
+          tracksViewChanges={tracksViewChanges}
+          zIndex={11}>
+          <ZoneBeacon color={Colors.danger} />
+        </Marker>
+
+        {/* Source lake name */}
         <Marker
           coordinate={{ latitude: lake.coordinates[1], longitude: lake.coordinates[0] }}
           anchor={{ x: 0.5, y: 0.5 }}
