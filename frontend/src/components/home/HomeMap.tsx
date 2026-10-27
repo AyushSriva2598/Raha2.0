@@ -1,3 +1,5 @@
+import { YouPin } from '@/components/common/MapPins';
+import { RAHA_MAP_STYLE } from '@/constants/mapStyle';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, {
@@ -58,6 +60,7 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
         style={StyleSheet.absoluteFill}
         provider={PROVIDER_GOOGLE}
         mapType={mapType}
+        customMapStyle={mapType === 'standard' ? RAHA_MAP_STYLE : undefined}
         initialRegion={initialRegion}
         onRegionChangeComplete={onRegionChangeComplete}
         showsCompass={false}
@@ -177,9 +180,7 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           tracksViewChanges={tracksViewChanges}
           zIndex={25}>
           <View style={[styles.markerScale, { transform: [{ scale }] }]}>
-            <View style={styles.userDotHalo}>
-              <View style={styles.userDotCore} />
-            </View>
+            <YouPin />
           </View>
         </Marker>
       </MapView>
@@ -190,23 +191,6 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
 const styles = StyleSheet.create({
   // Padding keeps scaled markers from being clipped by the native marker bitmap bounds
   markerScale: { padding: 6, alignItems: 'center', justifyContent: 'center' },
-  userDotHalo: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(37, 99, 235, 0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    ...Shadows.card,
-  },
-  userDotCore: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.you,
-  },
   highGroundMarker: {
     flexDirection: 'row',
     alignItems: 'center',

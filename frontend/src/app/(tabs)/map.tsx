@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
-import { ArrowLeft, DownloadCloud, Layers } from 'lucide-react-native';
+import { ArrowLeft, DownloadCloud, Flag, Layers, Route as RouteIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RouteSearchCard } from '@/components/navigate/RouteSearchCard';
 import {
@@ -50,6 +50,7 @@ export default function NavigateScreen() {
   );
 
   const inRouteMode = destination !== null && calculation !== null;
+  const selectedRoute = calculation?.routes.find((r) => r.id === selectedRouteId) ?? calculation?.routes[0];
   const topInset = Math.max(insets.top, 12) + 8;
 
   const openSearch = (target: 'origin' | 'destination') => {
@@ -105,8 +106,31 @@ export default function NavigateScreen() {
         </View>
       )}
 
+      {/* Route mode: destination and selected-route pills, like the trip pills on the reference map */}
+      {inRouteMode && destination && selectedRoute && (
+        <View pointerEvents="none" style={[styles.pills, { top: topInset }]}>
+          <View style={styles.pill}>
+            <View style={styles.pillIconCoral}>
+              <Flag size={14} color="#FFFFFF" strokeWidth={2.6} />
+            </View>
+            <Text style={styles.pillText} numberOfLines={1}>
+              <Text style={styles.pillStrong}>{destination.name}</Text> · {selectedRoute.distanceKm} km · {selectedRoute.durationMin} min
+            </Text>
+          </View>
+          <View style={styles.pill}>
+            <View style={[styles.pillIconCoral, { backgroundColor: selectedRoute.color }]}>
+              <RouteIcon size={14} color="#FFFFFF" strokeWidth={2.6} />
+            </View>
+            <Text style={styles.pillText} numberOfLines={1}>
+              {selectedRoute.name}
+              {selectedRoute.floodZonesCrossed > 0 ? ` · crosses ${selectedRoute.floodZonesCrossed} flood zone${selectedRoute.floodZonesCrossed > 1 ? 's' : ''}` : ' · avoids flood zones'}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Map tools: layer cycle + offline map */}
-      <View style={[styles.tools, { top: inRouteMode ? topInset : topInset + 104 }]}>
+      <View style={[styles.tools, { top: inRouteMode ? topInset + 108 : topInset + 104 }]}>
         <Pressable
           onPress={() => setMapType(NEXT_MAP_TYPE[mapType])}
           style={styles.toolButton}
@@ -187,6 +211,26 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
+  pills: { position: 'absolute', left: 64, right: 12, zIndex: 9, gap: 8, alignItems: 'flex-start' },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: '100%',
+    minHeight: 44,
+    paddingLeft: 6,
+    paddingRight: 16,
+    borderRadius: 22,
+    backgroundColor: Colors.surface,
+    shadowColor: '#7A2A22',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  pillIconCoral: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.coral, alignItems: 'center', justifyContent: 'center' },
+  pillText: { flexShrink: 1, fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2, fontVariant: ['tabular-nums'] },
+  pillStrong: { fontFamily: Typography.family.bold, color: Colors.ink },
   tools: { position: 'absolute', right: 12, zIndex: 10, gap: 8, alignItems: 'flex-end' },
   toolButton: {
     minHeight: 40,

@@ -1,3 +1,5 @@
+import { DestinationPin, YouPin } from '@/components/common/MapPins';
+import { RAHA_MAP_STYLE } from '@/constants/mapStyle';
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Pressable } from 'react-native';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE, Region } from 'react-native-maps';
@@ -86,6 +88,7 @@ export function NavigateMap({
         style={StyleSheet.absoluteFill}
         provider={PROVIDER_GOOGLE}
         mapType={mapType}
+        customMapStyle={mapType === 'standard' ? RAHA_MAP_STYLE : undefined}
         initialRegion={initialRegion}
         onRegionChangeComplete={onRegionChangeComplete}
         showsCompass={false}
@@ -172,9 +175,7 @@ export function NavigateMap({
                 <Pencil size={13} color={Colors.ink} />
               </Pressable>
             )}
-            <View style={styles.originDot}>
-              <View style={styles.originCore} />
-            </View>
+            <YouPin />
           </View>
         </Marker>
 
@@ -191,7 +192,7 @@ export function NavigateMap({
                 </Text>
                 <Pencil size={13} color={Colors.ink} />
               </Pressable>
-              <View style={styles.destPin} />
+              <DestinationPin />
             </View>
           </Marker>
         )}
@@ -224,24 +225,5 @@ const styles = StyleSheet.create({
     fontFamily: Typography.family.bold,
     fontSize: 13,
     color: Colors.ink,
-  },
-  originDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(37, 99, 235, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  originCore: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.you },
-  destPin: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.coral,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
   },
 });
