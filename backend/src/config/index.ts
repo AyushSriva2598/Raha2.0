@@ -27,6 +27,13 @@ export const config = {
     region: process.env.AWS_REGION || 'ap-south-1',
     senderId: process.env.SMS_SENDER_ID || '',
   },
+  // Road routing. OSRM's public demo server is for light development use only: for production point
+  // OSRM_URL at your own OSRM/Valhalla instance (or an AWS routing service behind the same shape).
+  routing: {
+    provider: (process.env.ROUTING_PROVIDER === 'none' ? 'none' : 'osrm') as 'osrm' | 'none',
+    osrmUrl: (process.env.OSRM_URL || 'https://router.project-osrm.org').replace(/\/+$/, ''),
+    timeoutMs: parseInt(process.env.ROUTING_TIMEOUT_MS || '10000', 10),
+  },
   sos: {
     live: process.env.SOS_LIVE === 'true',
     maxPerUserPerDay: parseInt(process.env.SOS_MAX_PER_DAY || '5', 10),
