@@ -104,12 +104,12 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           anchor={{ x: 0.5, y: 1 }}
           tracksViewChanges={tracksViewChanges}
           zIndex={20}>
-          <View style={[styles.markerScale, { transform: [{ scale }] }]}>
+          <View style={styles.markerScale}>
             <View style={styles.highGroundMarker}>
               <ShieldCheck size={14} color="#FFFFFF" strokeWidth={2.6} />
               <Text style={styles.highGroundText}>High ground</Text>
             </View>
-            <PinDrop color={Colors.safe}>
+            <PinDrop color={Colors.safe} scale={scale}>
               <ShieldCheck size={13} color={Colors.safeDark} strokeWidth={2.8} />
             </PinDrop>
           </View>
@@ -121,12 +121,12 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           anchor={{ x: 0.5, y: 1 }}
           tracksViewChanges={tracksViewChanges}
           zIndex={12}>
-          <View style={[styles.markerScale, { transform: [{ scale }] }]}>
+          <View style={styles.markerScale}>
             <View style={styles.lakeMarker}>
               <Waves size={13} color="#FFFFFF" strokeWidth={2.4} />
               <Text style={styles.highGroundText}>{lake.name}</Text>
             </View>
-            <PinDrop color={Colors.danger}>
+            <PinDrop color={Colors.danger} scale={scale}>
               <Waves size={13} color={Colors.dangerDark} strokeWidth={2.8} />
             </PinDrop>
           </View>
@@ -146,8 +146,8 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           anchor={{ x: 0.5, y: 0.5 }}
           tracksViewChanges={tracksViewChanges}
           zIndex={25}>
-          <View style={[styles.markerScale, { transform: [{ scale }] }]}>
-            <YouPin />
+          <View style={styles.markerScale}>
+            <YouPin scale={scale} />
           </View>
         </Marker>
       </MapView>

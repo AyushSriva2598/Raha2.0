@@ -104,8 +104,6 @@ export default function NavigateScreen() {
         onSelectRoute={setSelectedRouteId}
         mapType={mapType}
         insets={{ top: topInset + 70, bottom: inRouteMode ? 300 : 150 }}
-        onPressOrigin={() => openSearch('origin')}
-        onPressDestination={() => openSearch('destination')}
       />
 
       {/* Top overlay */}

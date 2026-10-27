@@ -7,9 +7,9 @@ import { Colors } from '@/constants/theme';
 // Map markers drawn as views: a coral-ringed "you" marker with a soft halo, and a coral flag pin
 // with a small tail. Wrap each in a Marker with tracksViewChanges handled by the caller.
 
-export function YouPin() {
+export function YouPin({ scale = 1 }: { scale?: number }) {
   return (
-    <View style={styles.halo}>
+    <View style={[styles.halo, scale !== 1 && { transform: [{ scale }], margin: 22 * (scale - 1) }]}>
       <View style={styles.ring}>
         <View style={styles.core} />
       </View>
@@ -33,13 +33,13 @@ function shade(hex: string, amount: number): string {
  * caller also shows a text label, so colour is never the only signal). The tip is the bottom centre,
  * so anchor the Marker at { x: 0.5, y: 1 }.
  */
-export function PinDrop({ color, children }: { color: string; children?: React.ReactNode }) {
+export function PinDrop({ color, children, scale = 1 }: { color: string; children?: React.ReactNode; scale?: number }) {
   const light = shade(color, 0.38);
   const dark = shade(color, -0.28);
   const id = `pin${color.slice(1)}`;
   return (
-    <View style={styles.pinBox}>
-      <Svg width={44} height={58} viewBox="0 0 44 58">
+    <View style={{ width: 44 * scale, height: 58 * scale }}>
+      <Svg width={44 * scale} height={58 * scale} viewBox="0 0 44 58">
         <Defs>
           <LinearGradient id={id} x1="0.1" y1="0" x2="0.9" y2="1">
             <Stop offset="0" stopColor={light} />
@@ -59,15 +59,15 @@ export function PinDrop({ color, children }: { color: string; children?: React.R
         <SvgCircle cx="22" cy="20" r="8.5" fill="#FFFFFF" />
         <SvgCircle cx="22" cy="20" r="4.2" fill={dark} opacity={children ? 0 : 1} />
       </Svg>
-      {children ? <View style={styles.pinIcon}>{children}</View> : null}
+      {children ? <View style={[styles.pinIcon, { top: 12 * scale, width: 44 * scale }]}>{children}</View> : null}
     </View>
   );
 }
 
-export function DestinationPin() {
+export function DestinationPin({ scale = 1 }: { scale?: number }) {
   return (
-    <PinDrop color={Colors.coral}>
-      <Flag size={13} color={Colors.coralDeep} strokeWidth={2.8} />
+    <PinDrop color={Colors.coral} scale={scale}>
+      <Flag size={Math.round(13 * scale)} color={Colors.coralDeep} strokeWidth={2.8} />
     </PinDrop>
   );
 }
@@ -97,6 +97,5 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   core: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.coral },
-  pinBox: { width: 44, height: 58 },
-  pinIcon: { position: 'absolute', top: 12, left: 0, width: 44, alignItems: 'center' },
+  pinIcon: { position: 'absolute', left: 0, alignItems: 'center' },
 });

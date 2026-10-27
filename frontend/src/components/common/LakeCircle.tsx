@@ -16,10 +16,10 @@ export function getLakeCircleStyle(riskLevel: RiskLevel) {
 
   return {
     fillColor: riskLevel === 'WARNING' || riskLevel === 'EVACUATE'
-      ? 'rgba(198, 40, 40, 0.22)'
+      ? 'rgba(198, 40, 40, 0.12)'
       : riskLevel === 'WATCH' || riskLevel === 'ADVISORY'
         ? 'rgba(240, 138, 36, 0.22)'
-        : 'rgba(227, 181, 5, 0.20)',
+        : 'rgba(227, 181, 5, 0.12)',
     strokeColor: color,
     strokeWidth: 2,
     lineDashPattern: [8, 6], // Dashed stroke per requirements
@@ -29,9 +29,12 @@ export function getLakeCircleStyle(riskLevel: RiskLevel) {
 export function LakeMarkerPill({
   name,
   riskLevel,
+  scale = 1,
 }: {
   name: string;
   riskLevel: RiskLevel;
+  /** Sizes scale with zoom; done with real sizes, not a transform, so the marker bitmap never clips. */
+  scale?: number;
 }) {
   const isHighRisk = riskLevel === 'WARNING' || riskLevel === 'EVACUATE';
   const isWatch = riskLevel === 'WATCH' || riskLevel === 'ADVISORY';
@@ -43,6 +46,7 @@ export function LakeMarkerPill({
         isHighRisk && styles.markerDanger,
         isWatch && styles.markerWatch,
         !isHighRisk && !isWatch && styles.markerLow,
+        { paddingHorizontal: 11 * scale, paddingVertical: 6 * scale, borderRadius: 18 * scale },
       ]}>
       <View
         style={[
@@ -50,7 +54,7 @@ export function LakeMarkerPill({
           { backgroundColor: LakeCircleColors[riskLevel] || LakeCircleColors.NORMAL },
         ]}
       />
-      <Text style={styles.markerText} numberOfLines={1}>
+      <Text style={[styles.markerText, { fontSize: Math.round(14 * scale) }]} numberOfLines={1}>
         {name} · {riskLevel.charAt(0) + riskLevel.slice(1).toLowerCase()}
       </Text>
     </View>
