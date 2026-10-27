@@ -60,7 +60,7 @@ export function RouteBottomSheet({
     const lng = destinationCoordinate.longitude;
 
     const googleMapsNativeUrl = `google.navigation:q=${lat},${lng}&mode=w`;
-    const googleMapsWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
+    const googleMapsWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
     const appleMapsUrl = `maps:0,0?q=${encodeURIComponent(destinationName)}@${lat},${lng}&dirflg=w`;
 
     try {
@@ -109,9 +109,9 @@ export function RouteBottomSheet({
 
         {!isSameLocation && routes.length === 0 && (
           <View style={styles.edgeStateBox}>
-            <Text style={styles.edgeStateTitle}>No walking routes found</Text>
+            <Text style={styles.edgeStateTitle}>No road route found</Text>
             <Text style={styles.edgeStateSubtitle}>
-              Could not compute a passable trail between these places.
+              No driving road connects these two places.
             </Text>
           </View>
         )}

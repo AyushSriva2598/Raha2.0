@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Pressable, Text, ActivityIndicator } from 'react-native';
 import { ArrowLeft, DownloadCloud, Flag, Layers, Route as RouteIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RouteSearchCard } from '@/components/navigate/RouteSearchCard';
@@ -14,9 +14,12 @@ import { RouteBottomSheet } from '@/components/navigate/RouteBottomSheet';
 import { OfflineMapSheet } from '@/components/common/OfflineMapSheet';
 import { Colors, Typography } from '@/constants/theme';
 import {
-  calculateHazardAvoidingRoutes,
+  classifyRoadRoutes,
   DEFAULT_HAZARD_ZONES,
+  isSamePlace,
+  RouteCalculationResult,
 } from '@/services/routeCalculator';
+import { fetchRoadRoutes } from '@/services/roadRouting';
 
 const NEXT_MAP_TYPE: Record<NavigateMapType, NavigateMapType> = {
   standard: 'terrain',
@@ -35,20 +38,39 @@ export default function NavigateScreen() {
   const insets = useSafeAreaInsets();
   const [origin, setOrigin] = useState<PlaceItem>(DEFAULT_ORIGIN);
   const [destination, setDestination] = useState<PlaceItem | null>(null);
-  const [selectedRouteId, setSelectedRouteId] = useState('route-safest');
+  const [selectedRouteId, setSelectedRouteId] = useState('route-1');
   const [mapType, setMapType] = useState<NavigateMapType>('standard');
   const [searchTarget, setSearchTarget] = useState<'origin' | 'destination'>('destination');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isOfflineOpen, setIsOfflineOpen] = useState(false);
 
-  const calculation = useMemo(
-    () =>
-      destination
-        ? calculateHazardAvoidingRoutes(origin.coordinate, destination.coordinate, DEFAULT_HAZARD_ZONES)
-        : null,
-    [origin, destination]
-  );
+  // Real road routes come from the backend. The result is keyed by the trip so a stale answer for an
+  // earlier destination is never shown, and "loading" is simply "no answer for this trip yet".
+  const [retryKey, setRetryKey] = useState(0);
+  const [outcome, setOutcome] = useState<{ key: string; result?: RouteCalculationResult; error?: string } | null>(null);
+  const sameSpot = destination !== null && isSamePlace(origin.coordinate, destination.coordinate);
+  const tripKey = destination && !sameSpot ? `${origin.id}|${destination.id}|${retryKey}` : null;
 
+  useEffect(() => {
+    if (!tripKey || !destination) return;
+    const controller = new AbortController();
+    fetchRoadRoutes(origin.coordinate, destination.coordinate, controller.signal)
+      .then((roads) => setOutcome({ key: tripKey, result: classifyRoadRoutes(roads, DEFAULT_HAZARD_ZONES) }))
+      .catch((e: Error) => {
+        if (!controller.signal.aborted) setOutcome({ key: tripKey, error: e.message });
+      });
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripKey]);
+
+  const current = tripKey && outcome?.key === tripKey ? outcome : null;
+  const calculation: RouteCalculationResult | null = sameSpot
+    ? { routes: [], isSameLocation: true, noHazardsOnAnyRoute: false }
+    : (current?.result ?? null);
+  const routeError = current?.error ?? null;
+  const loadingRoutes = tripKey !== null && current === null;
+
+  const hasDestination = destination !== null;
   const inRouteMode = destination !== null && calculation !== null;
   const selectedRoute = calculation?.routes.find((r) => r.id === selectedRouteId) ?? calculation?.routes[0];
   const topInset = Math.max(insets.top, 12) + 8;
@@ -62,7 +84,7 @@ export default function NavigateScreen() {
     if (searchTarget === 'origin') setOrigin(place);
     else {
       setDestination(place);
-      setSelectedRouteId('route-safest');
+      setSelectedRouteId('route-1');
     }
   };
 
@@ -87,7 +109,7 @@ export default function NavigateScreen() {
       />
 
       {/* Top overlay */}
-      {inRouteMode ? (
+      {hasDestination ? (
         <Pressable
           onPress={() => setDestination(null)}
           style={[styles.roundButton, { top: topInset, left: 12 }]}
@@ -99,7 +121,7 @@ export default function NavigateScreen() {
         <View style={[styles.searchWrap, { top: topInset }]}>
           <RouteSearchCard
             originName={origin.name}
-            destinationName={destination?.name ?? null}
+            destinationName={null}
             onPressOrigin={() => openSearch('origin')}
             onPressDestination={() => openSearch('destination')}
           />
@@ -149,14 +171,14 @@ export default function NavigateScreen() {
       </View>
 
       {/* Before a route exists: one-tap safe places, kept low so the map stays visible */}
-      {!inRouteMode && (
+      {!hasDestination && (
         <View style={styles.suggestions}>
           {suggestions.map((p) => (
             <Pressable
               key={p.id}
               onPress={() => {
                 setDestination(p);
-                setSelectedRouteId('route-safest');
+                setSelectedRouteId('route-1');
               }}
               style={styles.suggestionChip}
               accessibilityRole="button"
@@ -166,6 +188,30 @@ export default function NavigateScreen() {
               </Text>
             </Pressable>
           ))}
+        </View>
+      )}
+
+      {destination && (loadingRoutes || routeError) && (
+        <View style={styles.statusCard} accessibilityLiveRegion="polite">
+          {loadingRoutes ? (
+            <>
+              <ActivityIndicator color={Colors.coral} />
+              <Text style={styles.statusText}>Finding road routes to {destination.name}…</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.statusTitle}>Could not get road routes</Text>
+              <Text style={styles.statusText}>
+                Road routes need a connection to the Raha server. Check it and try again.
+              </Text>
+              <Pressable
+                onPress={() => setRetryKey((k) => k + 1)}
+                style={styles.retryButton}
+                accessibilityRole="button">
+                <Text style={styles.retryText}>Try again</Text>
+              </Pressable>
+            </>
+          )}
         </View>
       )}
 
@@ -231,6 +277,26 @@ const styles = StyleSheet.create({
   pillIconCoral: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.coral, alignItems: 'center', justifyContent: 'center' },
   pillText: { flexShrink: 1, fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2, fontVariant: ['tabular-nums'] },
   pillStrong: { fontFamily: Typography.family.bold, color: Colors.ink },
+  statusCard: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 110,
+    zIndex: 10,
+    gap: 10,
+    padding: 18,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
+    shadowColor: '#7A2A22',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  statusTitle: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.bodyLarge, color: Colors.ink },
+  statusText: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.body, lineHeight: 22, color: Colors.text2 },
+  retryButton: { alignSelf: 'flex-start', minHeight: 48, paddingHorizontal: 22, borderRadius: 24, backgroundColor: Colors.coral, justifyContent: 'center' },
+  retryText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.body, color: Colors.onCoral },
   tools: { position: 'absolute', right: 12, zIndex: 10, gap: 8, alignItems: 'flex-end' },
   toolButton: {
     minHeight: 40,

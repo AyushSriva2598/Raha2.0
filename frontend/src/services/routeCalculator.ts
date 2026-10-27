@@ -1,6 +1,7 @@
 import { point, lineString } from '@turf/helpers';
 import turfPointToLineDistance from '@turf/point-to-line-distance';
 import turfDistance from '@turf/distance';
+import type { RoadRoute } from '@/services/roadRouting';
 import { RouteOptionData } from '@/components/common/RouteRow';
 import { LakeHazardZone } from '@/components/common/LakeCircle';
 
@@ -57,165 +58,79 @@ export interface RouteCalculationResult {
   noHazardsOnAnyRoute: boolean;
 }
 
-/**
- * Generate intermediate waypoint coordinates between origin and destination with arc offset
- */
-function createCurvedPath(
-  origin: RouteCoordinate,
-  destination: RouteCoordinate,
-  offsetLat: number,
-  offsetLng: number,
-  steps = 8
-): RouteCoordinate[] {
-  const coords: RouteCoordinate[] = [origin];
-  for (let i = 1; i < steps; i++) {
-    const t = i / steps;
-    // quadratic bezier arc
-    const arc = 4 * t * (1 - t);
-    const lat = origin.latitude + t * (destination.latitude - origin.latitude) + arc * offsetLat;
-    const lng = origin.longitude + t * (destination.longitude - origin.longitude) + arc * offsetLng;
-    coords.push({ latitude: lat, longitude: lng });
-  }
-  coords.push(destination);
-  return coords;
-}
-
-/**
- * Calculates Safest, Balanced, and Shortest routes dynamically based on origin, destination,
- * and real geometric distances to active hazard zones using Turf.js.
- */
-export function calculateHazardAvoidingRoutes(
-  origin: RouteCoordinate,
-  destination: RouteCoordinate,
-  hazardZones: LakeHazardZone[] = DEFAULT_HAZARD_ZONES
-): RouteCalculationResult {
-  // Edge Case 1: Same location
-  const directDistKm = turfDistance(
+export function isSamePlace(origin: RouteCoordinate, destination: RouteCoordinate): boolean {
+  const km = turfDistance(
     point([origin.longitude, origin.latitude]),
     point([destination.longitude, destination.latitude]),
     { units: 'kilometers' }
   );
+  return km < 0.05;
+}
 
-  if (directDistKm < 0.05) {
-    return {
-      routes: [],
-      isSameLocation: true,
-      noHazardsOnAnyRoute: false,
-    };
-  }
+const NEAR_EDGE_M = 600;
 
-  // Generate 3 geometric paths:
-  // 1. Shortest: Direct path through the valley
-  const shortestCoords = createCurvedPath(origin, destination, -0.002, 0.001, 8);
-  // 2. Balanced: Moderate detour clipping edge
-  const balancedCoords = createCurvedPath(origin, destination, 0.008, 0.006, 10);
-  // 3. Safest: High ridge detour completely clearing all hazard buffer radiuses
-  const safestCoords = createCurvedPath(origin, destination, 0.022, 0.015, 12);
+// Colour and tier come from what the road actually does to the hazard zones, never from a label.
+const TIER = {
+  clear: { type: 'safest' as const, color: '#1B7F4B' },
+  caution: { type: 'balanced' as const, color: '#B45309' },
+  danger: { type: 'shortest' as const, color: '#B3261E' },
+};
 
-  // Evaluate each route against hazard zones using Turf point-to-line distance
-  const evaluateRoute = (
-    coords: RouteCoordinate[],
-    type: 'safest' | 'balanced' | 'shortest'
-  ): {
-    crossed: number;
-    clipped: number;
-    hasWarning: boolean;
-  } => {
-    // Turf lineString expects [longitude, latitude]
-    const turfLine = lineString(coords.map((c) => [c.longitude, c.latitude]));
+/**
+ * Scores real road routes against the hazard zones with Turf and ranks them. Distance and time are
+ * the routing engine's. A route's tier is clear (touches no zone), caution (passes near a zone edge or
+ * crosses a non-warning zone) or danger (crosses a WARNING/EVACUATE zone). The recommended route has
+ * the lowest tier, then the fewest zones, then the shortest time.
+ */
+export function classifyRoadRoutes(
+  roadRoutes: RoadRoute[],
+  hazardZones: LakeHazardZone[] = DEFAULT_HAZARD_ZONES
+): RouteCalculationResult {
+  const scored = roadRoutes.map((r) => {
+    const coordinates = r.coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
+    const line = lineString(r.coordinates);
     let crossed = 0;
     let clipped = 0;
-    let hasWarning = false;
-
+    let warning = false;
     for (const zone of hazardZones) {
-      const zonePoint = point([zone.longitude, zone.latitude]);
-      // Distance from hazard center to route line in kilometers
-      const distToLineKm = turfPointToLineDistance(zonePoint, turfLine, { units: 'kilometers' });
-      const distToLineM = distToLineKm * 1000;
-
-      if (distToLineM <= zone.radiusMeters) {
+      const m = turfPointToLineDistance(point([zone.longitude, zone.latitude]), line, { units: 'kilometers' }) * 1000;
+      if (m <= zone.radiusMeters) {
         crossed++;
-        if (zone.riskLevel === 'WARNING' || zone.riskLevel === 'EVACUATE') {
-          hasWarning = true;
-        }
-      } else if (distToLineM <= zone.radiusMeters + 600) {
+        if (zone.riskLevel === 'WARNING' || zone.riskLevel === 'EVACUATE') warning = true;
+      } else if (m <= zone.radiusMeters + NEAR_EDGE_M) {
         clipped++;
       }
     }
+    const tier = warning ? TIER.danger : crossed > 0 || clipped > 0 ? TIER.caution : TIER.clear;
+    return { road: r, coordinates, crossed, clipped, warning, tier };
+  });
 
-    return { crossed, clipped, hasWarning };
-  };
+  const rank = (x: (typeof scored)[number]) => [x.warning ? 2 : x.crossed > 0 || x.clipped > 0 ? 1 : 0, x.crossed, x.clipped, x.road.durationMin];
+  scored.sort((a, b) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
+    return 0;
+  });
+  const fastestMin = Math.min(...scored.map((x) => x.road.durationMin));
 
-  const shortestEval = evaluateRoute(shortestCoords, 'shortest');
-  const balancedEval = evaluateRoute(balancedCoords, 'balanced');
-  const safestEval = evaluateRoute(safestCoords, 'safest');
-
-  // Check if no hazards on any route
-  const totalCrossed = shortestEval.crossed + balancedEval.crossed + safestEval.crossed;
-  const noHazardsOnAnyRoute = totalCrossed === 0 && hazardZones.length > 0;
-
-  // Dynamic distances in km based on mountain terrain detour factors
-  const isLocal = directDistKm < 5;
-  const shortestKm = isLocal
-    ? Math.max(1.2, Math.round(directDistKm * 1.15 * 10) / 10)
-    : Math.round(directDistKm * 1.1);
-  const balancedKm = isLocal
-    ? Math.max(1.8, Math.round(directDistKm * 1.35 * 10) / 10)
-    : Math.round(directDistKm * 1.35);
-  const safestKm = isLocal
-    ? Math.max(2.4, Math.round(directDistKm * 1.7 * 10) / 10)
-    : Math.round(directDistKm * 1.7);
-
-  // Approximate walking speed in mountain terrain (~3.5 to 4.2 km/h)
-  const shortestMin = Math.round((shortestKm / 3.8) * 60);
-  const balancedMin = Math.round((balancedKm / 3.6) * 60);
-  const safestMin = Math.round((safestKm / 3.4) * 60);
-
-  const routes: ComputedRoute[] = [
-    {
-      id: 'route-safest',
-      type: 'safest',
-      name: 'Safest Route',
-      distanceKm: safestKm,
-      durationMin: safestMin,
-      floodZonesCrossed: safestEval.crossed,
-      floodZonesClipped: safestEval.clipped,
-      isRecommended: true,
-      hasWarningZoneCrossing: safestEval.hasWarning,
-      color: '#1B7F4B',
-      coordinates: safestCoords,
-    },
-    {
-      id: 'route-balanced',
-      type: 'balanced',
-      name: 'Balanced Trail',
-      distanceKm: balancedKm,
-      durationMin: balancedMin,
-      floodZonesCrossed: balancedEval.crossed,
-      floodZonesClipped: Math.max(1, balancedEval.clipped),
-      isRecommended: false,
-      hasWarningZoneCrossing: balancedEval.hasWarning,
-      color: '#B45309',
-      coordinates: balancedCoords,
-    },
-    {
-      id: 'route-shortest',
-      type: 'shortest',
-      name: 'Shortest Valley Path',
-      distanceKm: shortestKm,
-      durationMin: shortestMin,
-      floodZonesCrossed: Math.max(2, shortestEval.crossed),
-      floodZonesClipped: shortestEval.clipped,
-      isRecommended: false,
-      hasWarningZoneCrossing: true,
-      color: '#B3261E',
-      coordinates: shortestCoords,
-    },
-  ];
+  const routes: ComputedRoute[] = scored.map((x, i) => ({
+    id: `route-${i + 1}`,
+    type: x.tier.type,
+    name: x.road.durationMin === fastestMin ? 'Fastest road' : 'Alternative road',
+    distanceKm: x.road.distanceKm,
+    durationMin: x.road.durationMin,
+    floodZonesCrossed: x.crossed,
+    floodZonesClipped: x.clipped,
+    isRecommended: i === 0,
+    hasWarningZoneCrossing: x.warning,
+    color: x.tier.color,
+    coordinates: x.coordinates,
+  }));
 
   return {
     routes,
     isSameLocation: false,
-    noHazardsOnAnyRoute,
+    noHazardsOnAnyRoute: routes.length > 0 && routes.every((r) => r.floodZonesCrossed === 0),
   };
 }

@@ -46,24 +46,20 @@ export function RouteRow({
     }
   };
 
+  // Text and colour come from what this road really does to the flood zones.
   const getMeta = () => {
-    if (route.type === 'safest') {
+    const km = `${route.distanceKm.toFixed(1)} km`;
+    const crossed = route.floodZonesCrossed;
+    const clipped = route.floodZonesClipped ?? 0;
+    const zones = (n: number) => `${n} flood zone${n === 1 ? '' : 's'}`;
+    if (crossed > 0) {
       return {
-        text: `${route.distanceKm.toFixed(0)} km · Avoids all ${route.floodZonesCrossed === 0 ? 'hazard' : route.floodZonesCrossed} flood zones`,
-        color: Colors.safe,
+        text: `${km} · Crosses ${zones(crossed)}`,
+        color: route.type === 'shortest' ? Colors.dangerDark : Colors.watchTextAlt,
       };
     }
-    if (route.type === 'balanced') {
-      const clipped = route.floodZonesClipped ?? 1;
-      return {
-        text: `${route.distanceKm.toFixed(0)} km · Clips ${clipped} flood zone edge`,
-        color: Colors.watchTextAlt,
-      };
-    }
-    return {
-      text: `${route.distanceKm.toFixed(0)} km · Crosses ${route.floodZonesCrossed} flood zones`,
-      color: Colors.dangerDark,
-    };
+    if (clipped > 0) return { text: `${km} · Passes near ${zones(clipped)}`, color: Colors.watchTextAlt };
+    return { text: `${km} · Avoids all flood zones`, color: Colors.safe };
   };
 
   const meta = getMeta();
