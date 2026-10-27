@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
+import Animated, { type AnimatedStyle } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Box, Bell, Layers } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,16 +10,21 @@ import { useAppStore } from '@/store/useAppStore';
 export interface HomeFabsProps {
   mapType: 'standard' | 'satellite' | 'terrain';
   onToggleLayers: () => void;
+  fadeStyle?: AnimatedStyle<StyleProp<ViewStyle>>;
+  fadeProps?: Partial<ViewProps>;
 }
 
 // Round floating map controls stacked on the right edge, each a full 48dp target.
-export function HomeFabs({ mapType, onToggleLayers }: HomeFabsProps) {
+export function HomeFabs({ mapType, onToggleLayers, fadeStyle, fadeProps }: HomeFabsProps) {
   const insets = useSafeAreaInsets();
   const strings = useAppStore((s) => s.t)();
   const satellite = mapType === 'satellite';
 
   return (
-    <View pointerEvents="box-none" style={[styles.stack, { top: Math.max(insets.top, 12) + 128 }]}>
+    <Animated.View
+      animatedProps={fadeProps}
+      pointerEvents="box-none"
+      style={[styles.stack, { top: Math.max(insets.top, 12) + 128 }, fadeStyle]}>
       <Fab label={`${strings.home.lake3d}`} onPress={() => router.push('/terrain' as any)} primary>
         <Box size={21} color={Colors.onCoral} strokeWidth={2.2} />
       </Fab>
@@ -28,7 +34,7 @@ export function HomeFabs({ mapType, onToggleLayers }: HomeFabsProps) {
       <Fab label={strings.home.activityUpdates} onPress={() => router.push('/activity' as any)}>
         <Bell size={21} color={Colors.coral} strokeWidth={2.2} />
       </Fab>
-    </View>
+    </Animated.View>
   );
 }
 

@@ -50,7 +50,6 @@ export interface HomeBottomSheetProps {
   onSelectShelter?: (shelter: SafePoint) => void;
   /** Fractional snap index, so the screen can fade its floating controls as the sheet rises. */
   animatedIndex?: SharedValue<number>;
-  onSnapChange?: (index: number) => void;
 }
 
 export function HomeBottomSheet({
@@ -64,7 +63,6 @@ export function HomeBottomSheet({
   onOpenSos,
   onSelectShelter,
   animatedIndex,
-  onSnapChange,
 }: HomeBottomSheetProps) {
   const sheetRef = useRef<BottomSheet>(null);
   const [currentSnapIndex, setCurrentSnapIndex] = useState(1); // default 424px
@@ -74,8 +72,7 @@ export function HomeBottomSheet({
 
   const handleSheetChanges = useCallback((index: number) => {
     setCurrentSnapIndex(index);
-    onSnapChange?.(index);
-  }, [onSnapChange]);
+  }, []);
 
   const isExpanded = currentSnapIndex === 2;
 

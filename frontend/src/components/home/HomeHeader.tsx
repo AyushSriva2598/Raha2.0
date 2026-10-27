@@ -1,6 +1,10 @@
 import React from 'react';
+import Animated, { type AnimatedStyle } from 'react-native-reanimated';
 import {
   View,
+  type StyleProp,
+  type ViewProps,
+  type ViewStyle,
   Text,
   StyleSheet,
   Pressable,
@@ -14,6 +18,9 @@ import type { AlertLevel } from '@/types';
 
 export interface HomeHeaderProps {
   onToggleMenu?: () => void;
+  /** Animated opacity and pointer-events from the screen, run on the UI thread. */
+  fadeStyle?: AnimatedStyle<StyleProp<ViewStyle>>;
+  fadeProps?: Partial<ViewProps>;
 }
 
 const LEVEL_COLOR: Record<AlertLevel, string> = {
@@ -23,7 +30,7 @@ const LEVEL_COLOR: Record<AlertLevel, string> = {
   EVACUATE: Colors.danger,
 };
 
-export function HomeHeader({ onToggleMenu }: HomeHeaderProps) {
+export function HomeHeader({ onToggleMenu, fadeStyle, fadeProps }: HomeHeaderProps) {
   const insets = useSafeAreaInsets();
   const { userProfile, activeLake, alertLevel, t } = useAppStore();
   const strings = t();
@@ -44,7 +51,10 @@ export function HomeHeader({ onToggleMenu }: HomeHeaderProps) {
   const haven = activeLake.primarySafeHaven;
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrapper, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
+    <Animated.View
+      animatedProps={fadeProps}
+      pointerEvents="box-none"
+      style={[styles.wrapper, { paddingTop: Math.max(insets.top, 12) + 4 }, fadeStyle]}>
       <View style={styles.headerRow}>
         <Pressable
           onPress={onToggleMenu}
@@ -79,7 +89,7 @@ export function HomeHeader({ onToggleMenu }: HomeHeaderProps) {
           {strings.home.safeGround} <Text style={styles.pillStrong}>{haven.name}</Text> · {haven.distanceKm} km · {haven.walkTimeMinutes} min
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
