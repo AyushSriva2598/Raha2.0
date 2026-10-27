@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     gap: 14,
     minHeight: 104,
     padding: 18,
-    borderRadius: Radii.cardLarge,
+    borderRadius: Radii.cardLarge, borderCurve: 'continuous',
     backgroundColor: Colors.coralSoft,
     ...Shadows.card,
   },

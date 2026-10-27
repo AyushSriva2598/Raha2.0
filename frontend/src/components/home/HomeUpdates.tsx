@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     padding: 14,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     backgroundColor: Colors.coralTint,
     minHeight: 64,
   },

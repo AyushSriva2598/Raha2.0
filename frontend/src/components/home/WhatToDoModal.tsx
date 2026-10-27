@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: Colors.bg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     padding: 14,
     borderWidth: 1,
     borderColor: Colors.border,

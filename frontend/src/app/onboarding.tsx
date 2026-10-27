@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   langOptionCard: {
     backgroundColor: Colors.glacierMist,
     padding: Spacing.lg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     borderWidth: 1.5,
     borderColor: Colors.borderSubtle,
     flexDirection: 'row',
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   zoneSelectionCard: {
     backgroundColor: '#FFFFFF',
     padding: Spacing.lg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     borderWidth: 1.5,
     borderColor: Colors.cirqueTeal,
     flexDirection: 'row',

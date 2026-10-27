@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   input: {
     height: 48,
     backgroundColor: Colors.glacierMist,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     paddingHorizontal: 14,
     fontSize: 14,
     color: Colors.moraineInk,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     height: 52,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     backgroundColor: Colors.meltwater,
     alignItems: 'center',
     justifyContent: 'center',

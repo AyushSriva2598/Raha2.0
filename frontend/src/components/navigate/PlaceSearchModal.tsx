@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     paddingHorizontal: 14,
     height: 48,
     borderWidth: 1,

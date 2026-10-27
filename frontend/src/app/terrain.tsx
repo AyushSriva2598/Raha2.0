@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   badgeText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.body },
   tier: { gap: GAP },
   statRow: { flexDirection: 'row', gap: 12 },
-  stat: { flex: 1, padding: 12, borderRadius: Radii.tile, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, gap: 2 },
+  stat: { flex: 1, padding: 12, borderRadius: Radii.tile, borderCurve: 'continuous', backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, gap: 2 },
   statLabel: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, color: Colors.text2 },
   statValue: { fontFamily: Typography.family.bold, fontSize: 26, color: Colors.ink },
   statWarn: { color: Colors.dangerDark },

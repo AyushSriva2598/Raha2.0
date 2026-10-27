@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     gap: 14,
     alignItems: 'flex-start',
     padding: 16,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,

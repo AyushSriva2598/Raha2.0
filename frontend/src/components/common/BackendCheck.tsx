@@ -75,7 +75,7 @@ export function BackendCheck() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surfaceLowest,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: Spacing.lg,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
   button: {
     minHeight: 48,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     backgroundColor: Colors.meltwater,
     alignItems: 'center',
     justifyContent: 'center',

@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   dossierCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 52,
     backgroundColor: Colors.cirqueTeal,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     flex: 1,
     height: 46,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     backgroundColor: Colors.glacierMist,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   sosButton: {
     flex: 1,
     height: 46,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     backgroundColor: Colors.alarmRedLight,
     borderWidth: 1,
     borderColor: 'rgba(209, 48, 58, 0.25)',

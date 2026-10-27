@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   inlineContainer: {
     height: 56,
     width: 96,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     borderWidth: 1.5,
     borderColor: Colors.danger,
     backgroundColor: Colors.surface,

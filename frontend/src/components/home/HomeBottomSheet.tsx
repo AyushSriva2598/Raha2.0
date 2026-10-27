@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     borderWidth: 1,
     borderColor: Colors.watch,
-    borderRadius: Radii.tile,
+    borderRadius: Radii.tile, borderCurve: 'continuous',
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 10,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   // 1. Zone Card (dangerTint, radius 24)
   zoneCard: {
     backgroundColor: Colors.dangerTint,
-    borderRadius: Radii.cardLarge, // radius 24
+    borderRadius: Radii.cardLarge, borderCurve: 'continuous', // radius 24
     padding: 16,
     borderWidth: 1.5,
     borderColor: Colors.danger,
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   // Red Banner (60 px, radius 20): "Lake outburst risk: WARNING"
   redRiskBanner: {
     height: 60,
-    borderRadius: Radii.card, // radius 20
+    borderRadius: Radii.card, borderCurve: 'continuous', // radius 20
     backgroundColor: Colors.danger,
     flexDirection: 'row',
     alignItems: 'center',
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   tipsButton: {
     width: 64,
     height: 56,
-    borderRadius: Radii.button,
+    borderRadius: Radii.button, borderCurve: 'continuous',
     backgroundColor: '#FEF3C7',
     borderWidth: 1.5,
     borderColor: Colors.watch,
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF8E6',
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     padding: 16,
     borderWidth: 1.5,
     borderColor: Colors.watch,
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: Colors.dangerTint,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: Colors.danger,
     gap: 8,
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.bg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,

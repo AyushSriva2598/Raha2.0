@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     padding: 16,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,

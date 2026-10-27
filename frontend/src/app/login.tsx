@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 58,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.border,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   box: {
     flex: 1,
     height: 64,
-    borderRadius: Radii.tile,
+    borderRadius: Radii.tile, borderCurve: 'continuous',
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.border,
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   link: { minHeight: 44, justifyContent: 'center' },
   linkText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.body, color: Colors.coralDeep, textDecorationLine: 'underline' },
   muted: { fontVariant: ['tabular-nums'], fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2 },
-  errorRow: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 12, borderRadius: Radii.tile, backgroundColor: Colors.dangerTint },
+  errorRow: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 12, borderRadius: Radii.tile, borderCurve: 'continuous', backgroundColor: Colors.dangerTint },
   errorText: { flex: 1, fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, lineHeight: 20, color: Colors.dangerDark },
   cta: { marginTop: 'auto' },
 });

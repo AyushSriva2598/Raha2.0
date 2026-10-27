@@ -50,7 +50,7 @@ export function RouteSearchCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: Colors.border,
     paddingHorizontal: 14,

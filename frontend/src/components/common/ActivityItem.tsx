@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   container: {
     height: 80,
     backgroundColor: Colors.surface,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,

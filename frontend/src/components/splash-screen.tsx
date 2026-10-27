@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 96,
     height: 96,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Colors.borderSubtle,

@@ -55,7 +55,7 @@ export function StatTile({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.surface,
-    borderRadius: Radii.tile,
+    borderRadius: Radii.tile, borderCurve: 'continuous',
     padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.border,

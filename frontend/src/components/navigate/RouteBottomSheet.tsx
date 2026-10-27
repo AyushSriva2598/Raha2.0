@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     paddingHorizontal: 16,
     backgroundColor: Colors.bg,
-    borderRadius: Radii.card,
+    borderRadius: Radii.card, borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: Colors.border,
     marginTop: 8,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     backgroundColor: Colors.surface,
-    borderRadius: Radii.cardLarge,
+    borderRadius: Radii.cardLarge, borderCurve: 'continuous',
     padding: 24,
     alignItems: 'center',
     ...Shadows.sheet,
