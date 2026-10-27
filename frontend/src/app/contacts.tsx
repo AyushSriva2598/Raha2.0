@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Phone, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Phone, Trash2, UserPlus } from 'lucide-react-native';
 import { Colors, Radii, Typography } from '@/constants/theme';
 import { SearchField } from '@/components/common/SearchField';
 import { Pill } from '@/components/common/Pill';
@@ -22,7 +22,7 @@ const initialsOf = (name: string) =>
 
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
-  const { userProfile, toggleContact, openAddContactModal } = useAppStore();
+  const { userProfile, toggleContact, removeContact, openAddContactModal } = useAppStore();
   const [tab, setTab] = useState<Tab>('book');
   const [query, setQuery] = useState('');
 
@@ -88,6 +88,13 @@ export default function ContactsScreen() {
                       accessibilityLabel={`Alert ${c.name} on SOS`}
                     />
                     <Text style={styles.meta}>{c.isActive ? 'Gets SOS alerts' : 'Alerts off'}</Text>
+                    <Pressable
+                      onPress={() => removeContact(c.contactId)}
+                      style={({ pressed }) => [styles.remove, pressed && styles.pressed]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${c.name}`}>
+                      <Trash2 size={18} color={Colors.text2} />
+                    </Pressable>
                   </View>
                 </View>
                 <Pressable
@@ -163,6 +170,7 @@ const styles = StyleSheet.create({
   name: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.bodyLarge, color: Colors.ink },
   meta: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2 },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  remove: { width: 48, height: 48, marginLeft: 'auto', alignItems: 'center', justifyContent: 'center' },
   call: {
     width: 48,
     height: 48,

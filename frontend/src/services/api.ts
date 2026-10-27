@@ -62,6 +62,7 @@ export interface IGlacialThreatApiClient {
   updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
   toggleContactDispatch(contactId: string, isActive: boolean): Promise<SosContact>;
   addEmergencyContact(contact: Omit<SosContact, 'contactId'>): Promise<SosContact>;
+  deleteContact(contactId: string): Promise<void>;
   triggerEmergencySos(payload: SosBroadcastPayload): Promise<SosResponse>;
   updateThreatLevel(level: AlertLevel): Promise<LakeAssessment>;
   calculateRoute(
@@ -235,26 +236,29 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     return this.cachedProfile;
   }
 
+  // Throws when the server did not accept the change, so the caller can roll back. Who gets an SOS
+  // must never silently differ between the screen and the server.
   async toggleContactDispatch(contactId: string, isActive: boolean): Promise<SosContact> {
-    try {
-      const activeBase = this.getBaseUrl();
-      const res = await fetch(`${activeBase}/api/user/contacts/${contactId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ isActive }),
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {
-      // offline update
-    }
-    const contact = this.cachedProfile.contacts.find((c) => c.contactId === contactId);
-    if (contact) {
-      contact.isActive = isActive;
-      return contact;
-    }
-    throw new Error(`Contact ${contactId} not found`);
+    const res = await fetch(`${this.getBaseUrl()}/api/user/contacts/${contactId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ isActive }),
+    });
+    if (!res.ok) throw new Error(`Server refused the change (${res.status})`);
+    return await res.json();
+  }
+
+  async deleteContact(contactId: string): Promise<void> {
+    const res = await fetch(`${this.getBaseUrl()}/api/user/contacts/${contactId}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    // 404 means it is already gone, which is what the caller wanted.
+    if (!res.ok && res.status !== 404) throw new Error(`Server refused the change (${res.status})`);
+    this.cachedProfile = {
+      ...this.cachedProfile,
+      contacts: this.cachedProfile.contacts.filter((c) => c.contactId !== contactId),
+    };
   }
 
   async addEmergencyContact(contactData: Omit<SosContact, 'contactId'>): Promise<SosContact> {

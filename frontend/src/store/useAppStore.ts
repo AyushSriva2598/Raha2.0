@@ -12,6 +12,7 @@ import {
 } from '@/types';
 import { useOfflineStore } from '@/services/offlineCache';
 import { apiClient } from '@/services/api';
+import { showToast } from '@/services/toastStore';
 import { TRANSLATIONS, Translations, LanguageCode } from '@/i18n/translations';
 
 import { LakeId, LakeConfig, LAKES_REGISTRY } from '@/constants/lakes';
@@ -63,6 +64,7 @@ interface AppState {
   setSelectedSafePoint: (safePoint: SafePoint | null) => void;
   toggleContact: (contactId: string) => Promise<void>;
   addEmergencyContact: (contact: Omit<SosContact, 'contactId'>) => Promise<void>;
+  removeContact: (contactId: string) => void;
   openSosModal: (open: boolean) => void;
   openAddContactModal: (open: boolean) => void;
   triggerEmergencySos: () => Promise<SosResponse>;
@@ -201,18 +203,62 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ selectedSafePoint: safePoint });
   },
 
+  // Optimistic: the switch moves at once and goes back, with a message, if the server says no.
   toggleContact: async (contactId: string) => {
     const profile = get().userProfile;
-    if (!profile) return;
-    const target = profile.contacts.find((c) => c.contactId === contactId);
-    if (!target) return;
+    const target = profile?.contacts.find((c) => c.contactId === contactId);
+    if (!profile || !target) return;
 
-    const nextState = !target.isActive;
-    await apiClient.toggleContactDispatch(contactId, nextState);
-    const updatedContacts = profile.contacts.map((c) =>
-      c.contactId === contactId ? { ...c, isActive: nextState } : c
-    );
-    set({ userProfile: { ...profile, contacts: updatedContacts } });
+    const setActive = (isActive: boolean) =>
+      set((state) =>
+        state.userProfile
+          ? {
+              userProfile: {
+                ...state.userProfile,
+                contacts: state.userProfile.contacts.map((c) => (c.contactId === contactId ? { ...c, isActive } : c)),
+              },
+            }
+          : {}
+      );
+
+    setActive(!target.isActive);
+    try {
+      await apiClient.toggleContactDispatch(contactId, !target.isActive);
+    } catch {
+      setActive(target.isActive);
+      showToast({ message: `Could not update ${target.name}. Check your connection and try again.`, tone: 'error' });
+    }
+  },
+
+  // Deleting is reversible: the contact leaves the list now, Undo brings it back, and the request is
+  // only sent once the Undo window has closed.
+  removeContact: (contactId: string) => {
+    const profile = get().userProfile;
+    const index = profile?.contacts.findIndex((c) => c.contactId === contactId) ?? -1;
+    const target = profile?.contacts[index];
+    if (!profile || !target) return;
+
+    set({ userProfile: { ...profile, contacts: profile.contacts.filter((c) => c.contactId !== contactId) } });
+
+    const restore = () =>
+      set((state) => {
+        if (!state.userProfile || state.userProfile.contacts.some((c) => c.contactId === contactId)) return {};
+        const contacts = [...state.userProfile.contacts];
+        contacts.splice(Math.min(index, contacts.length), 0, target);
+        return { userProfile: { ...state.userProfile, contacts } };
+      });
+
+    showToast({
+      message: `${target.name} removed`,
+      actionLabel: 'Undo',
+      onAction: restore,
+      onExpire: () => {
+        apiClient.deleteContact(contactId).catch(() => {
+          restore();
+          showToast({ message: `Could not remove ${target.name}. They are back in your list.`, tone: 'error' });
+        });
+      },
+    });
   },
 
   addEmergencyContact: async (contactData) => {

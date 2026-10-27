@@ -16,6 +16,7 @@ import {
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastHost } from '@/components/common/ToastHost';
 import { SplashScreenOverlay } from '@/components/splash-screen';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/services/authStore';
@@ -83,6 +84,7 @@ export default function RootLayout() {
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
           </Stack.Protected>
         </Stack>
+        <ToastHost />
         {showSplash && (
           <SplashScreenOverlay onFinish={() => setShowSplash(false)} />
         )}
