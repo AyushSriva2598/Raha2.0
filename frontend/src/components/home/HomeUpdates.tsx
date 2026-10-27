@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { CloudRain, ChevronRight } from 'lucide-react-native';
 import { Colors, Typography, Radii } from '@/constants/theme';
 import { useFeedStore, formatAgo } from '@/services/feedStore';
+import { useRevalidate } from '@/hooks/use-revalidate';
 
 // Real conditions and latest public updates for the area, linked to the Activity articles.
 export function HomeUpdates() {
@@ -12,6 +13,8 @@ export function HomeUpdates() {
   useEffect(() => {
     hydrate().then(() => refresh());
   }, [hydrate, refresh]);
+
+  useRevalidate(() => void refresh(), status === 'offline');
 
   const weather = items.find((i) => i.id === 'weather-chungthang');
   const news = items.filter((i) => i.category !== 'weather').slice(0, 3);

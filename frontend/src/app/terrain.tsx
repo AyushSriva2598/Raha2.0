@@ -19,6 +19,7 @@ import { GLOF_LEVEL_COLOR, GLOF_LEVEL_LABEL, GLOF_LEVEL_TEXT } from '@/constants
 import { TerrainView, type TerrainLayers } from '@/components/terrain/TerrainView';
 import { TimelineSlider } from '@/components/terrain/TimelineSlider';
 import { DEFAULT_GLOF_LAKES, useGlofStore } from '@/services/glofStore';
+import { useRevalidate } from '@/hooks/use-revalidate';
 
 const BASE_STEP_MS = 650;
 const SPEEDS = [0.5, 1, 2, 4] as const;
@@ -87,6 +88,7 @@ export default function TerrainScreen() {
 
   const data = byId[lakeId] ?? null;
   const loadStatus = status[lakeId] ?? 'idle';
+  useRevalidate(() => void loadLake(lakeId), loadStatus === 'offline' || loadStatus === 'error');
   const frames = useMemo(() => data?.frames ?? [], [data]);
   const frame = frames[Math.min(frameIndex, Math.max(0, frames.length - 1))];
   const hasHistory = !!data?.archiveAvailable && frames.length > 1;

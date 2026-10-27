@@ -31,6 +31,8 @@ async function getJson<T>(path: string, ms = 60000): Promise<T> {
   }
 }
 
+const fetchedAt: Record<string, number> = {};
+
 export const useGlofStore = create<GlofState>((set, get) => ({
   lakes: DEFAULT_GLOF_LAKES,
   byId: {},
@@ -47,7 +49,8 @@ export const useGlofStore = create<GlofState>((set, get) => ({
 
   loadLake: async (id, force = false) => {
     const setStatus = (s: GlofState['status'][string]) => set((st) => ({ status: { ...st.status, [id]: s } }));
-    if (!force && get().byId[id] && get().status[id] === 'ok') return;
+    // Fresh enough: reuse it. Older than a minute: show it and refetch in the background.
+    if (!force && get().byId[id] && get().status[id] === 'ok' && Date.now() - (fetchedAt[id] ?? 0) < 60_000) return;
     setStatus('loading');
 
     // Show a saved copy immediately while the network call runs.
@@ -63,6 +66,7 @@ export const useGlofStore = create<GlofState>((set, get) => ({
     try {
       const data = await getJson<GlofLakeData>(`/api/glof/${id}${force ? '?refresh=1' : ''}`);
       set((st) => ({ byId: { ...st.byId, [id]: data } }));
+      fetchedAt[id] = Date.now();
       setStatus('ok');
       getStorage()?.setItem(KEY(id), JSON.stringify(data)).catch(() => {});
     } catch (e) {

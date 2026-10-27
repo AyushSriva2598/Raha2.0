@@ -6,6 +6,7 @@ import { CloudRain, Activity as Pulse, Newspaper, ChevronDown, ExternalLink, Wif
 import { Colors, Typography, Spacing, Radii, Shadows } from '@/constants/theme';
 import { Pill } from '@/components/common/Pill';
 import { useFeedStore, formatAgo } from '@/services/feedStore';
+import { useRevalidate } from '@/hooks/use-revalidate';
 import type { FeedCategory, FeedItem } from '@/types';
 
 type Filter = 'all' | FeedCategory;
@@ -117,6 +118,8 @@ export default function ActivityScreen() {
   useEffect(() => {
     hydrate().then(() => refresh());
   }, [hydrate, refresh]);
+
+  useRevalidate(() => void refresh(), status === 'offline');
 
   const onRefresh = useCallback(() => refresh(true), [refresh]);
 
