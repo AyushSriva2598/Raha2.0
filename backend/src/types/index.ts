@@ -106,11 +106,12 @@ export interface UserProfile {
 
 export interface SosBroadcastPayload {
   userId: string;
-  latitude: number;
-  longitude: number;
-  elevationM: number;
-  batteryPct: number;
-  networkStatus: string;
+  /** null when the phone could not get a real location; no location is ever invented. */
+  latitude: number | null;
+  longitude: number | null;
+  elevationM?: number | null;
+  batteryPct?: number | null;
+  networkStatus?: string;
   alertLevel: AlertLevel;
   timestamp: string;
   recipientContactIds: string[];
@@ -119,9 +120,16 @@ export interface SosBroadcastPayload {
 export interface SosResponse {
   broadcastId: string;
   dispatchedAt: string;
+  /** Messages the SMS provider actually accepted. */
   smsCount: number;
-  satelliteRelaySent: boolean;
-  status: 'DELIVERED' | 'QUEUED' | 'FALLBACK_SMS';
+  /** Contacts the SOS was meant for. */
+  recipients: number;
+  /**
+   * SENT: every message accepted. PARTIAL: some. RECORDED: saved on the server, nothing sent because
+   * messaging is not switched on. FAILED: the server could not send anything.
+   */
+  status: 'SENT' | 'PARTIAL' | 'RECORDED' | 'FAILED';
+  note?: string;
 }
 
 export interface NavigationRouteOption {

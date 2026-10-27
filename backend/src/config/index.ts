@@ -20,4 +20,15 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/raha_db',
   awsWebhookSecret: webhookSecret(),
   corsOrigin: process.env.CORS_ORIGIN || '*',
+  // Messaging is off until AWS is ready: SMS_PROVIDER=sns picks Amazon SNS, SOS_LIVE=true lets the SOS
+  // button actually message contacts. Both default to off, and the app then says so honestly.
+  sms: {
+    provider: (process.env.SMS_PROVIDER === 'sns' ? 'sns' : 'none') as 'sns' | 'none',
+    region: process.env.AWS_REGION || 'ap-south-1',
+    senderId: process.env.SMS_SENDER_ID || '',
+  },
+  sos: {
+    live: process.env.SOS_LIVE === 'true',
+    maxPerUserPerDay: parseInt(process.env.SOS_MAX_PER_DAY || '5', 10),
+  },
 };

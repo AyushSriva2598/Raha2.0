@@ -3,7 +3,8 @@ import { db } from '../db/db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { idempotent } from '../middleware/idempotency.js';
 import { realtimeService } from '../services/realtimeService.js';
-import { SosBroadcastPayload } from '../types/index.js';
+import { SosBroadcastPayload, SosResponse } from '../types/index.js';
+import { dispatchSos } from '../services/sosDispatch.js';
 
 const router = Router();
 
@@ -19,7 +20,13 @@ router.post(
     }
 
     try {
-      const response = await db.recordSosBroadcast(req.userId as string, payload);
+      const { name, recipients } = await db.resolveSosRecipients(req.userId as string, payload.recipientContactIds);
+      const outcome = await dispatchSos(req.userId as string, name, recipients, payload);
+      const response: SosResponse = {
+        broadcastId: `bcast-${Date.now().toString(36)}`,
+        dispatchedAt: new Date().toISOString(),
+        ...outcome,
+      };
 
       // Notify connected web dashboards and emergency operators
       realtimeService.broadcastSosAlert({

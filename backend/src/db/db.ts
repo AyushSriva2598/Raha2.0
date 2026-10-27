@@ -215,18 +215,10 @@ export class DatabaseStore {
   }
 
   // --- SOS BROADCAST & FANOUT ---
-  async recordSosBroadcast(userId: string, payload: SosBroadcastPayload): Promise<SosResponse> {
-    const activeRecipients = this.requireUser(userId).contacts.filter(
-      (c) => payload.recipientContactIds.includes(c.contactId) && c.isActive
-    );
-
-    return {
-      broadcastId: `bcast-${Date.now().toString(36)}`,
-      dispatchedAt: new Date().toISOString(),
-      smsCount: activeRecipients.length,
-      satelliteRelaySent: true,
-      status: 'DELIVERED',
-    };
+  /** The signed-in user's name and the chosen contacts that are switched on for SOS. */
+  async resolveSosRecipients(userId: string, contactIds: string[]): Promise<{ name: string; recipients: SosContact[] }> {
+    const user = this.requireUser(userId);
+    return { name: user.name, recipients: user.contacts.filter((c) => contactIds.includes(c.contactId) && c.isActive) };
   }
 
   // --- NAVIGATION ROUTES ---
