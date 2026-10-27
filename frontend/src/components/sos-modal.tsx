@@ -28,11 +28,19 @@ export function EmergencySosModal() {
   const strings = t();
   const insets = useSafeAreaInsets();
 
+  // A second tap or the countdown firing together with a tap must not start a second request.
+  const inFlight = React.useRef(false);
   const handleDispatch = React.useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setIsBroadcasting(true);
-    await triggerEmergencySos();
-    setIsBroadcasting(false);
-    setIsDispatched(true);
+    try {
+      await triggerEmergencySos();
+      setIsDispatched(true);
+    } finally {
+      inFlight.current = false;
+      setIsBroadcasting(false);
+    }
   }, [triggerEmergencySos]);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 // Production API service client for Glacial Threat Early Warning System (Raha)
 // Communicates end-to-end with Raha Product Backend with offline cache resilience
 
+import { newIdempotencyKey } from '@/utils/idempotency';
 import {
   AlertLevel,
   EventLog,
@@ -61,9 +62,9 @@ export interface IGlacialThreatApiClient {
   getUserProfile(): Promise<UserProfile>;
   updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
   toggleContactDispatch(contactId: string, isActive: boolean): Promise<SosContact>;
-  addEmergencyContact(contact: Omit<SosContact, 'contactId'>): Promise<SosContact>;
+  addEmergencyContact(contact: Omit<SosContact, 'contactId'>, idempotencyKey?: string): Promise<SosContact>;
   deleteContact(contactId: string): Promise<void>;
-  triggerEmergencySos(payload: SosBroadcastPayload): Promise<SosResponse>;
+  triggerEmergencySos(payload: SosBroadcastPayload, idempotencyKey?: string): Promise<SosResponse>;
   updateThreatLevel(level: AlertLevel): Promise<LakeAssessment>;
   calculateRoute(
     origin: string,
@@ -261,12 +262,12 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     };
   }
 
-  async addEmergencyContact(contactData: Omit<SosContact, 'contactId'>): Promise<SosContact> {
+  async addEmergencyContact(contactData: Omit<SosContact, 'contactId'>, idempotencyKey = newIdempotencyKey()): Promise<SosContact> {
     try {
       const activeBase = this.getBaseUrl();
       const res = await fetch(`${activeBase}/api/user/contacts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey, ...authHeaders() },
         body: JSON.stringify(contactData),
       });
       if (res.ok) {
@@ -285,20 +286,24 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
     return newContact;
   }
 
-  async triggerEmergencySos(payload: SosBroadcastPayload): Promise<SosResponse> {
-    try {
-      const activeBase = this.getBaseUrl();
-      const res = await fetch(`${activeBase}/api/alerts/sos-broadcast`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        return await res.json();
+  async triggerEmergencySos(payload: SosBroadcastPayload, idempotencyKey = newIdempotencyKey()): Promise<SosResponse> {
+    // The same key on every attempt: if the first one reached the server but the reply was lost, the
+    // retry gets that answer back instead of sending a second SOS.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(`${this.getBaseUrl()}/api/alerts/sos-broadcast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey, ...authHeaders() },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) return await res.json();
+        if (res.status < 500) break; // the server understood and said no; retrying will not help
+      } catch {
+        // network dropped: try again
       }
-    } catch {
-      // offline direct beacon
+      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
     }
+    // offline direct beacon
     return {
       broadcastId: `bcast-${Date.now().toString(36)}`,
       dispatchedAt: new Date().toISOString(),

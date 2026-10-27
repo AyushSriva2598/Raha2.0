@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Switch,
 } from 'react-native';
 import { Colors, Radii, Shadows, Spacing } from '@/constants/tokens';
+import { newIdempotencyKey } from '@/utils/idempotency';
 import { useAppStore } from '@/store/useAppStore';
 import { UserPlus, X } from 'lucide-react-native';
 
@@ -20,22 +21,29 @@ export function AddEmergencyContactModal() {
   const [relation, setRelation] = useState('Sister');
   const [phone, setPhone] = useState('+977 98');
   const [notifyOnRisk, setNotifyOnRisk] = useState(true);
+  const [saving, setSaving] = useState(false);
+  // One key per contact the person is adding: a retry of the same save never adds a second copy.
+  const saveKey = useRef<string | null>(null);
 
   const relations = ['Sister', 'Mother', 'Brother', 'Kin', 'Spouse', 'Elder'];
 
   if (!isAddContactModalOpen) return null;
 
   const handleSave = async () => {
-    if (!name.trim()) return;
-    await addEmergencyContact({
-      name: name.trim(),
-      relation,
-      phone: phone.trim(),
-      isActive: true,
-      notifyOnRisk,
-    });
-    setName('');
-    openAddContactModal(false);
+    if (!name.trim() || saving) return;
+    saveKey.current ??= newIdempotencyKey();
+    setSaving(true);
+    try {
+      await addEmergencyContact(
+        { name: name.trim(), relation, phone: phone.trim(), isActive: true, notifyOnRisk },
+        saveKey.current
+      );
+      saveKey.current = null;
+      setName('');
+      openAddContactModal(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -125,12 +133,13 @@ export function AddEmergencyContactModal() {
           <Pressable
             style={({ pressed }) => [
               styles.saveButton,
-              !name.trim() && styles.saveButtonDisabled,
+              (!name.trim() || saving) && styles.saveButtonDisabled,
               pressed && styles.pressed,
             ]}
             onPress={handleSave}
-            disabled={!name.trim()}>
-            <Text style={styles.saveButtonText}>Save Emergency Kin</Text>
+            disabled={!name.trim() || saving}
+            accessibilityState={{ busy: saving }}>
+            <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Emergency Kin'}</Text>
           </Pressable>
         </View>
       </View>

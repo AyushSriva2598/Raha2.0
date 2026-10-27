@@ -13,6 +13,7 @@ import {
 import { useOfflineStore } from '@/services/offlineCache';
 import { apiClient } from '@/services/api';
 import { showToast } from '@/services/toastStore';
+import { newIdempotencyKey } from '@/utils/idempotency';
 import { TRANSLATIONS, Translations, LanguageCode } from '@/i18n/translations';
 
 import { LakeId, LakeConfig, LAKES_REGISTRY } from '@/constants/lakes';
@@ -47,6 +48,8 @@ interface AppState {
   isSosModalOpen: boolean;
   isAddContactModalOpen: boolean;
   sosBroadcastResult: SosResponse | null;
+  /** Made when the person starts an SOS; every retry of that SOS sends it as the Idempotency-Key. */
+  sosIdempotencyKey: string | null;
 
   // Actions
   init: () => Promise<void>;
@@ -63,7 +66,7 @@ interface AppState {
   toggleLegend: () => void;
   setSelectedSafePoint: (safePoint: SafePoint | null) => void;
   toggleContact: (contactId: string) => Promise<void>;
-  addEmergencyContact: (contact: Omit<SosContact, 'contactId'>) => Promise<void>;
+  addEmergencyContact: (contact: Omit<SosContact, 'contactId'>, idempotencyKey?: string) => Promise<void>;
   removeContact: (contactId: string) => void;
   openSosModal: (open: boolean) => void;
   openAddContactModal: (open: boolean) => void;
@@ -98,6 +101,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSosModalOpen: false,
   isAddContactModalOpen: false,
   sosBroadcastResult: null,
+  sosIdempotencyKey: null,
 
   setActiveLakeId: (lakeId: LakeId) => {
     const lake = LAKES_REGISTRY[lakeId] || LAKES_REGISTRY.south_lhonak;
@@ -261,8 +265,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  addEmergencyContact: async (contactData) => {
-    const newContact = await apiClient.addEmergencyContact(contactData);
+  addEmergencyContact: async (contactData, idempotencyKey) => {
+    const newContact = await apiClient.addEmergencyContact(contactData, idempotencyKey);
     const profile = get().userProfile;
     if (profile) {
       set({
@@ -276,7 +280,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openSosModal: (open: boolean) => {
-    set({ isSosModalOpen: open });
+    set({ isSosModalOpen: open, sosIdempotencyKey: open ? (get().sosIdempotencyKey ?? newIdempotencyKey()) : null });
   },
 
   openAddContactModal: (open: boolean) => {
@@ -289,7 +293,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       .filter((c) => c.isActive)
       .map((c) => c.contactId);
 
-    const response = await apiClient.triggerEmergencySos({
+    const sosIdempotencyKey = get().sosIdempotencyKey ?? newIdempotencyKey();
+    const response = await apiClient.triggerEmergencySos(
+      {
       userId: userProfile?.userId || 'usr-anonymous',
       latitude: 27.892,
       longitude: 86.83,
@@ -299,7 +305,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       alertLevel,
       timestamp: new Date().toISOString(),
       recipientContactIds: activeContactIds,
-    });
+      },
+      sosIdempotencyKey
+    );
 
     set({ sosBroadcastResult: response });
     return response;
