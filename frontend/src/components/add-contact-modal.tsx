@@ -104,7 +104,7 @@ export function AddEmergencyContactModal() {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Mobile / Satellite Radio Handle</Text>
+            <Text style={styles.label}>Mobile number</Text>
             <TextInput
               style={styles.input}
               placeholder="+977 9801-XXXXXX"

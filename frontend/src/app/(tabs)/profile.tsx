@@ -28,11 +28,9 @@ import {
   CheckCircle2,
   Languages,
   Mic,
-  ShieldAlert,
   Clock,
   MapPin,
-  Signal,
-} from 'lucide-react-native';
+  } from 'lucide-react-native';
 import { LanguageCode } from '@/i18n/translations';
 import { BackendCheck } from '@/components/common/BackendCheck';
 
@@ -156,28 +154,14 @@ export default function ProfileScreen() {
         ]}
         showsVerticalScrollIndicator={false}>
 
-        {/* Top Status Bar: Satellite Connected & Location */}
+        {/* Top status bar: where the app is watching */}
         <View style={styles.topStatusBarRow}>
-          <View style={styles.satelliteStatusPill}>
-            <View style={styles.greenPulseDot} />
-            <Signal size={13} color="#10B981" />
-            <Text style={styles.satelliteStatusText}>SATELLITE CONNECTED</Text>
-          </View>
-
           <View style={styles.locationPill}>
             <MapPin size={13} color="#6B544F" />
             <Text style={styles.locationPillText}>
               {activeLake.primarySettlement.name} • {activeLake.primarySettlement.elevationM.toLocaleString()}m
             </Text>
           </View>
-        </View>
-
-        {/* Emergency SAR Dispatch Banner */}
-        <View style={styles.sarReadyBanner}>
-          <ShieldAlert size={15} color="#DC2626" strokeWidth={2.4} />
-          <Text style={styles.sarReadyText}>
-            EMERGENCY SAR DISPATCH READY • IRIDIUM BEACON ARMED
-          </Text>
         </View>
 
         {/* Hero Big Red SOS Card */}
@@ -187,11 +171,11 @@ export default function ProfileScreen() {
               <Radio size={20} color="#FFFFFF" strokeWidth={2.4} />
             </View>
             <View style={styles.heroSosTitleStack}>
-              <Text style={styles.heroSosTitle}>BROADCAST SATELLITE SOS</Text>
+              <Text style={styles.heroSosTitle}>SEND SOS TO YOUR CONTACTS</Text>
               <Text style={styles.heroSosSubtitle}>
                 {sosDelayMode === '3s_delay'
-                  ? 'Hold 3 sec to alert Sikkim SAR & Kin'
-                  : 'Tap to immediately alert Sikkim SAR & Kin'}
+                  ? 'Hold 3 sec to text your emergency contacts'
+                  : 'Tap to text your emergency contacts now'}
               </Text>
             </View>
           </View>
@@ -308,7 +292,7 @@ export default function ProfileScreen() {
             <View>
               <Text style={styles.kinSectionTitle}>Emergency Kin Status</Text>
               <Text style={styles.kinSectionSubtitle}>
-                Automated satellite SMS broadcast to family upon moraine breach.
+                {strings.profile.sosContactsSubtitle}
               </Text>
             </View>
             <Pressable

@@ -67,7 +67,7 @@ export default function OnboardingScreen() {
           <View style={styles.stepContainer}>
             <Text style={styles.stepHeading}>High-Altitude Resident Sign-In</Text>
             <Text style={styles.stepSub}>
-              Enter your mobile or satellite terminal number to receive critical Himalayan GLOF dispatches.
+              Enter your mobile number to get alerts about glacial lake floods.
             </Text>
 
             <View style={styles.inputGroup}>
