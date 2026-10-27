@@ -413,8 +413,8 @@ const styles = StyleSheet.create({
   playButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.coral, alignItems: 'center', justifyContent: 'center' },
   dockRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dockDate: { flex: 1 },
-  dockDateText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, color: Colors.ink },
+  dockDateText: { fontVariant: ['tabular-nums'], fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, color: Colors.ink },
   dockSub: { fontFamily: Typography.family.regular, fontSize: 11, color: Colors.text3 },
   speed: { minWidth: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: Colors.coral, alignItems: 'center', justifyContent: 'center' },
-  speedText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, color: Colors.coralDeep },
+  speedText: { fontVariant: ['tabular-nums'], fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, color: Colors.coralDeep },
 });

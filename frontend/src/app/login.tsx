@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   links: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   link: { minHeight: 44, justifyContent: 'center' },
   linkText: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.body, color: Colors.coralDeep, textDecorationLine: 'underline' },
-  muted: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2 },
+  muted: { fontVariant: ['tabular-nums'], fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, color: Colors.text2 },
   errorRow: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 12, borderRadius: Radii.tile, backgroundColor: Colors.dangerTint },
   errorText: { flex: 1, fontFamily: Typography.family.bold, fontSize: Typography.sizes.meta, lineHeight: 20, color: Colors.dangerDark },
   cta: { marginTop: 'auto' },

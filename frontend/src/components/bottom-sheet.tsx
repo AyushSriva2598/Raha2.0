@@ -341,6 +341,7 @@ const styles = StyleSheet.create({
     color: Colors.slateFog,
   },
   distanceText: {
+    fontVariant: ['tabular-nums'],
     fontSize: 11,
     color: Colors.slateFog,
     marginTop: 1,
@@ -366,6 +367,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   metricValue: {
+    fontVariant: ['tabular-nums'],
     fontSize: 12,
     fontWeight: '700',
     color: Colors.moraineInk,

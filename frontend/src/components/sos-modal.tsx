@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   countdownNumber: {
+    fontVariant: ['tabular-nums'],
     fontFamily: 'AtkinsonHyperlegible_700Bold',
     fontSize: 88,
     lineHeight: 100,

@@ -316,6 +316,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.sm,
   },
   elevationBadgeText: {
+    fontVariant: ['tabular-nums'],
     fontFamily: Typography.sansMedium,
     fontSize: 11,
     color: Colors.highGroundBlue,
