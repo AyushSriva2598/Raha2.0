@@ -303,13 +303,13 @@ class ProductionGlacialThreatApiClient implements IGlacialThreatApiClient {
       }
       await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
     }
-    // offline direct beacon
+    // Nothing reached the server, so nothing was sent. Say so; the screen offers retry and calling.
     return {
-      broadcastId: `bcast-${Date.now().toString(36)}`,
+      broadcastId: `local-${Date.now().toString(36)}`,
       dispatchedAt: new Date().toISOString(),
-      smsCount: payload.recipientContactIds.length,
-      satelliteRelaySent: true,
-      status: 'DELIVERED',
+      smsCount: 0,
+      recipients: payload.recipientContactIds.length,
+      status: 'FAILED',
     };
   }
 

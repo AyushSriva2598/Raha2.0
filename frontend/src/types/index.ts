@@ -114,11 +114,12 @@ export interface TelemetryStation {
 
 export interface SosBroadcastPayload {
   userId: string;
-  latitude: number;
-  longitude: number;
-  elevationM: number;
-  batteryPct: number;
-  networkStatus: string;
+  /** null when the phone has no real location; nothing is ever invented. */
+  latitude: number | null;
+  longitude: number | null;
+  elevationM?: number | null;
+  batteryPct?: number | null;
+  networkStatus?: string;
   alertLevel: AlertLevel;
   timestamp: string;
   recipientContactIds: string[];
@@ -127,9 +128,13 @@ export interface SosBroadcastPayload {
 export interface SosResponse {
   broadcastId: string;
   dispatchedAt: string;
+  /** Messages the SMS provider actually accepted. */
   smsCount: number;
-  satelliteRelaySent: boolean;
-  status: 'DELIVERED' | 'QUEUED' | 'FALLBACK_SMS';
+  /** Contacts the SOS was meant for. */
+  recipients: number;
+  /** SENT / PARTIAL: texts went out. RECORDED: saved, messaging off. FAILED: nothing sent. */
+  status: 'SENT' | 'PARTIAL' | 'RECORDED' | 'FAILED';
+  note?: string;
 }
 
 export interface NavigationRouteOption {

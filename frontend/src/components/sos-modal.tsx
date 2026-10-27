@@ -5,10 +5,11 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  Linking,
 } from 'react-native';
 import { Colors } from '@/constants/tokens';
 import { useAppStore } from '@/store/useAppStore';
-import { Radio, MapPin, CheckCircle } from 'lucide-react-native';
+import { Radio, MapPin, CheckCircle, AlertTriangle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function EmergencySosModal() {
@@ -18,6 +19,7 @@ export function EmergencySosModal() {
     triggerEmergencySos,
     userProfile,
     alertLevel,
+    sosBroadcastResult: result,
     t,
   } = useAppStore();
 
@@ -67,6 +69,21 @@ export function EmergencySosModal() {
 
   if (!isSosModalOpen) return null;
 
+  // What the screen says comes from what the server reported, never from what we hoped happened.
+  const delivered = result?.status === 'SENT' || result?.status === 'PARTIAL';
+  const resultTitle =
+    result?.status === 'SENT' || result?.status === 'PARTIAL'
+      ? strings.sos.resultSentTitle
+      : result?.status === 'RECORDED'
+        ? strings.sos.resultRecordedTitle
+        : strings.sos.resultFailedTitle;
+  const resultText =
+    result?.status === 'SENT' || result?.status === 'PARTIAL'
+      ? strings.sos.resultSent.replace('{n}', String(result.smsCount)).replace('{total}', String(result.recipients))
+      : result?.status === 'RECORDED'
+        ? strings.sos.resultRecorded
+        : strings.sos.resultFailed;
+
   const activeContacts = (userProfile?.contacts || []).filter((c) => c.isActive);
   const initials = (name: string) =>
     name
@@ -107,7 +124,7 @@ export function EmergencySosModal() {
             <View style={styles.locationRow}>
               <MapPin size={16} color="#FFFFFF" />
               <Text style={styles.locationText}>
-                Chungthang, 1,790 m • Alert: {alertLevel}
+                Alert: {alertLevel}
               </Text>
             </View>
             <Text style={styles.quote}>{strings.sos.countdownSubtitle}</Text>
@@ -132,22 +149,44 @@ export function EmergencySosModal() {
         ) : (
           <>
             <Text style={styles.title} accessibilityRole="header">
-              {strings.sos.broadcastingTitle}
+              {resultTitle}
             </Text>
             <View style={styles.stage}>
               <View style={[styles.ring, styles.ringOuter]} />
               <View style={[styles.ring, styles.ringMid]} />
               <View style={styles.core}>
-                <CheckCircle size={72} color="#FFFFFF" strokeWidth={2} />
+                {delivered ? (
+                  <CheckCircle size={72} color="#FFFFFF" strokeWidth={2} />
+                ) : (
+                  <AlertTriangle size={72} color="#FFFFFF" strokeWidth={2} />
+                )}
               </View>
             </View>
-            <Text style={styles.quote}>{strings.sos.dispatchedNotice}</Text>
-            <View style={styles.metaBox}>
-              <Text style={styles.metaText}>✓ SMS dispatched via AWS SNS to 2 numbers</Text>
-              <Text style={styles.metaText}>✓ Satellite beacon active on North Sikkim repeater</Text>
-              <Text style={styles.metaText}>✓ North Sikkim District Control acknowledged (demo)</Text>
-            </View>
+            <Text style={styles.quote} accessibilityLiveRegion="polite">
+              {resultText}
+            </Text>
             <View style={styles.buttons}>
+              {result?.status === 'FAILED' && (
+                <Pressable
+                  style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                  onPress={() => {
+                    setIsDispatched(false);
+                    handleDispatch();
+                  }}
+                  accessibilityRole="button">
+                  <Text style={styles.secondaryButtonText}>{strings.sos.retry}</Text>
+                </Pressable>
+              )}
+              {!delivered &&
+                activeContacts.slice(0, 2).map((c) => (
+                  <Pressable
+                    key={c.contactId}
+                    style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                    onPress={() => Linking.openURL(`tel:${c.phone.replace(/\s/g, '')}`)}
+                    accessibilityRole="button">
+                    <Text style={styles.secondaryButtonText}>{strings.sos.callContact.replace('{name}', c.name)}</Text>
+                  </Pressable>
+                ))}
               <Pressable
                 style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
                 onPress={handleClose}
@@ -248,18 +287,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
     maxWidth: 340,
-  },
-  metaBox: {
-    width: '100%',
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    gap: 6,
-  },
-  metaText: {
-    fontFamily: 'AtkinsonHyperlegible_400Regular',
-    fontSize: 14,
-    color: '#FFFFFF',
   },
   buttons: {
     width: '100%',

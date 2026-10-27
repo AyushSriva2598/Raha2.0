@@ -14,6 +14,7 @@ import { useOfflineStore } from '@/services/offlineCache';
 import { apiClient } from '@/services/api';
 import { showToast } from '@/services/toastStore';
 import { newIdempotencyKey } from '@/utils/idempotency';
+import { getRealPosition } from '@/services/location';
 import { TRANSLATIONS, Translations, LanguageCode } from '@/i18n/translations';
 
 import { LakeId, LakeConfig, LAKES_REGISTRY } from '@/constants/lakes';
@@ -280,7 +281,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openSosModal: (open: boolean) => {
-    set({ isSosModalOpen: open, sosIdempotencyKey: open ? (get().sosIdempotencyKey ?? newIdempotencyKey()) : null });
+    set({ sosBroadcastResult: null, isSosModalOpen: open, sosIdempotencyKey: open ? (get().sosIdempotencyKey ?? newIdempotencyKey()) : null });
   },
 
   openAddContactModal: (open: boolean) => {
@@ -294,17 +295,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       .map((c) => c.contactId);
 
     const sosIdempotencyKey = get().sosIdempotencyKey ?? newIdempotencyKey();
+    // Real position only; with none, the SOS says so instead of sending a made-up place.
+    const position = await getRealPosition();
     const response = await apiClient.triggerEmergencySos(
       {
-      userId: userProfile?.userId || 'usr-anonymous',
-      latitude: 27.892,
-      longitude: 86.83,
-      elevationM: userProfile?.elevationM || 4410,
-      batteryPct: 88,
-      networkStatus: 'IRIDIUM_SATELLITE_HYBRID',
-      alertLevel,
-      timestamp: new Date().toISOString(),
-      recipientContactIds: activeContactIds,
+        userId: userProfile?.userId || 'usr-anonymous',
+        latitude: position?.latitude ?? null,
+        longitude: position?.longitude ?? null,
+        alertLevel,
+        timestamp: new Date().toISOString(),
+        recipientContactIds: activeContactIds,
       },
       sosIdempotencyKey
     );

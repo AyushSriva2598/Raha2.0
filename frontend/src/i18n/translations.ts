@@ -137,8 +137,15 @@ export interface Translations {
     countdownSubtitle: string;
     cancelButton: string;
     broadcastingTitle: string;
-    dispatchedNotice: string;
     doneButton: string;
+    resultSentTitle: string;
+    resultSent: string; // {n} and {total}
+    resultRecordedTitle: string;
+    resultRecorded: string;
+    resultFailedTitle: string;
+    resultFailed: string;
+    retry: string;
+    callContact: string; // {name}
   };
 }
 
@@ -273,12 +280,19 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       privacyNotice: 'Compliant with DPDP Act 2023 & Indian disaster governance framework.',
     },
     sos: {
-      dialogTitle: 'Emergency SOS Trigger',
-      countdownSubtitle: 'Broadcasting live location to SOS contacts in',
-      cancelButton: 'Cancel Broadcast',
-      broadcastingTitle: 'Dispatched to Contacts & DHM',
-      dispatchedNotice: 'Your precise altitude and distress coordinates have been transmitted via SMS & satellite relay.',
+      dialogTitle: 'Emergency SOS',
+      countdownSubtitle: 'Sending your SOS to your contacts in',
+      cancelButton: 'Cancel',
+      broadcastingTitle: 'Sending your SOS…',
       doneButton: 'Close',
+      resultSentTitle: 'SOS sent',
+      resultSent: 'Text messages were sent to {n} of {total} contacts.',
+      resultRecordedTitle: 'SOS saved, not sent',
+      resultRecorded: 'Text messages are not switched on yet. Call someone now.',
+      resultFailedTitle: 'SOS not sent',
+      resultFailed: 'Could not send. Call someone now, then try again.',
+      retry: 'Try again',
+      callContact: 'Call {name}',
     },
   },
   hi: {
@@ -411,12 +425,19 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       privacyNotice: 'डीपीडीपी अधिनियम 2023 और आपदा नियमों के अनुरूप।',
     },
     sos: {
-      dialogTitle: 'आपातकालीन SOS सक्रिय',
-      countdownSubtitle: 'संपर्कों को लाइव स्थान भेजा जा रहा है:',
-      cancelButton: 'प्रसारण रद्द करें',
-      broadcastingTitle: 'संपर्कों और आपदा केंद्र को भेजा गया',
-      dispatchedNotice: 'आपकी सटीक ऊंचाई और स्थिति SMS और सैटेलाइट के माध्यम से प्रेषित कर दी गई है।',
-      doneButton: 'समाप्त',
+      dialogTitle: 'आपातकालीन SOS',
+      countdownSubtitle: 'आपके संपर्कों को SOS भेजा जाएगा, इतने सेकंड में',
+      cancelButton: 'रद्द करें',
+      broadcastingTitle: 'आपका SOS भेजा जा रहा है…',
+      doneButton: 'बंद करें',
+      resultSentTitle: 'SOS भेज दिया गया',
+      resultSent: '{total} में से {n} संपर्कों को SMS भेजे गए।',
+      resultRecordedTitle: 'SOS सेव हुआ, भेजा नहीं गया',
+      resultRecorded: 'टेक्स्ट संदेश अभी चालू नहीं हैं। अभी किसी को फोन करें।',
+      resultFailedTitle: 'SOS नहीं भेजा जा सका',
+      resultFailed: 'भेज नहीं सके। अभी किसी को फोन करें, फिर दोबारा कोशिश करें।',
+      retry: 'फिर कोशिश करें',
+      callContact: '{name} को फोन करें',
     },
   },
   ne: {
@@ -549,12 +570,19 @@ export const TRANSLATIONS: Record<LanguageCode, Translations> = {
       privacyNotice: 'विपद् व्यवस्थापन ऐन तथा गोपनीयता निर्देशिका बमोजिम।',
     },
     sos: {
-      dialogTitle: 'आपतकालीन SOS सुरु',
-      countdownSubtitle: 'सम्पर्कहरूलाई स्थान पठाउन बाँकी समय:',
+      dialogTitle: 'आपतकालीन SOS',
+      countdownSubtitle: 'तपाईंका सम्पर्कहरूलाई SOS पठाइनेछ, यति सेकेन्डमा',
       cancelButton: 'रद्द गर्नुहोस्',
-      broadcastingTitle: 'सम्पर्कहरू तथा केन्द्रमा पठाइयो',
-      dispatchedNotice: 'तपाईंको उचाइ र स्थानको जानकारी SMS र स्याटेलाइटबाट पठाइसकिएको छ।',
+      broadcastingTitle: 'तपाईंको SOS पठाइँदैछ…',
       doneButton: 'बन्द गर्नुहोस्',
+      resultSentTitle: 'SOS पठाइयो',
+      resultSent: '{total} मध्ये {n} सम्पर्कलाई SMS पठाइयो।',
+      resultRecordedTitle: 'SOS सुरक्षित भयो, पठाइएन',
+      resultRecorded: 'टेक्स्ट सन्देश अझै सक्रिय छैन। अहिले कसैलाई फोन गर्नुहोस्।',
+      resultFailedTitle: 'SOS पठाउन सकिएन',
+      resultFailed: 'पठाउन सकिएन। अहिले कसैलाई फोन गर्नुहोस्, अनि फेरि प्रयास गर्नुहोस्।',
+      retry: 'फेरि प्रयास गर्नुहोस्',
+      callContact: '{name} लाई फोन गर्नुहोस्',
     },
   },
 };

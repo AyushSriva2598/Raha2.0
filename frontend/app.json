@@ -32,6 +32,12 @@
         {}
       ],
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Raha uses your location only when you press SOS, so your contacts know where to find you."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
