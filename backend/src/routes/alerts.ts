@@ -1,32 +1,37 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { idempotent } from '../middleware/idempotency.js';
 import { realtimeService } from '../services/realtimeService.js';
 import { SosBroadcastPayload } from '../types/index.js';
 
 const router = Router();
 
 // POST /api/alerts/sos-broadcast
-router.post('/sos-broadcast', requireAuth, async (req: Request, res: Response) => {
-  try {
+// A repeated Idempotency-Key returns the first answer instead of sending a second SOS.
+router.post(
+  '/sos-broadcast',
+  requireAuth,
+  idempotent(async (req: Request) => {
     const payload: SosBroadcastPayload = req.body;
     if (!payload.recipientContactIds || !Array.isArray(payload.recipientContactIds)) {
-      res.status(400).json({ error: 'recipientContactIds array is required' });
-      return;
+      return { status: 400, body: { error: 'recipientContactIds array is required' } };
     }
 
-    const response = await db.recordSosBroadcast(req.userId as string, payload);
+    try {
+      const response = await db.recordSosBroadcast(req.userId as string, payload);
 
-    // Notify connected web dashboards and emergency operators
-    realtimeService.broadcastSosAlert({
-      ...payload,
-      ...response,
-    });
+      // Notify connected web dashboards and emergency operators
+      realtimeService.broadcastSosAlert({
+        ...payload,
+        ...response,
+      });
 
-    res.json(response);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+      return { status: 200, body: response };
+    } catch (error) {
+      return { status: 500, body: { error: (error as Error).message } };
+    }
+  })
+);
 
 export default router;

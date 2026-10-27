@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { idempotent } from '../middleware/idempotency.js';
 
 const router = Router();
 
@@ -28,19 +29,22 @@ router.patch('/profile', async (req: Request, res: Response) => {
 });
 
 // POST /api/user/contacts
-router.post('/contacts', async (req: Request, res: Response) => {
-  try {
+// A repeated Idempotency-Key returns the first contact instead of adding a duplicate.
+router.post(
+  '/contacts',
+  idempotent(async (req: Request) => {
     const { name, relation, phone, isActive = true, notifyOnRisk = true } = req.body;
     if (!name || !phone || !relation) {
-      res.status(400).json({ error: 'Name, phone, and relation are required' });
-      return;
+      return { status: 400, body: { error: 'Name, phone, and relation are required' } };
     }
-    const newContact = await db.addContact(req.userId as string, { name, relation, phone, isActive, notifyOnRisk });
-    res.status(201).json(newContact);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+    try {
+      const newContact = await db.addContact(req.userId as string, { name, relation, phone, isActive, notifyOnRisk });
+      return { status: 201, body: newContact };
+    } catch (error) {
+      return { status: 500, body: { error: (error as Error).message } };
+    }
+  })
+);
 
 // PATCH /api/user/contacts/:contactId
 router.patch('/contacts/:contactId', async (req: Request, res: Response) => {
