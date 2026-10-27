@@ -98,7 +98,7 @@ export function EmergencySosModal() {
       <View style={[styles.screen, { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24 }]}>
         {!isDispatched ? (
           <>
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
               {isBroadcasting ? strings.sos.broadcastingTitle : strings.sos.dialogTitle}
             </Text>
 
@@ -148,7 +148,7 @@ export function EmergencySosModal() {
           </>
         ) : (
           <>
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
               {resultTitle}
             </Text>
             <View style={styles.stage}>

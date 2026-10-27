@@ -54,7 +54,7 @@ export default function SafetyScreen() {
           />
         )}
 
-        <Text style={styles.title} accessibilityRole="header">
+        <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
           {copy.title}
         </Text>
         <Text style={styles.subtitle}>{copy.subtitle}</Text>

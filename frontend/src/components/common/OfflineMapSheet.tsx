@@ -29,7 +29,7 @@ export function OfflineMapSheet({ visible, onClose }: OfflineMapSheetProps) {
   return (
     <SwipeSheet visible={visible} onClose={onClose} sheetStyle={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
       <View style={styles.content}>
-        <Text style={styles.title} accessibilityRole="header">
+        <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
           Download Offline Map
         </Text>
         <Text style={styles.body}>

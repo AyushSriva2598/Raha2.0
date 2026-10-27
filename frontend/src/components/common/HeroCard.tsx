@@ -32,7 +32,7 @@ export function HeroCard({ title, subtitle, eyebrow, actionLabel, onAction, chil
       <View pointerEvents="none" style={[styles.circle, styles.circleSmall]} />
 
       {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-      <Text style={styles.title} accessibilityRole="header">
+      <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
         {title}
       </Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}

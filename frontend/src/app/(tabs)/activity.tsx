@@ -156,7 +156,7 @@ export default function ActivityScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle} accessibilityRole="header">
+        <Text style={styles.headerTitle} accessibilityRole="header" textBreakStrategy="balanced">
           Activity
         </Text>
         <Text style={styles.headerSub}>

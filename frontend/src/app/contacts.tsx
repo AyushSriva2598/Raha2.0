@@ -52,7 +52,7 @@ export default function ContactsScreen() {
             accessibilityLabel="Go back">
             <ArrowLeft size={22} color={Colors.ink} />
           </Pressable>
-          <Text style={styles.title} accessibilityRole="header">
+          <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
             Contacts
           </Text>
         </View>

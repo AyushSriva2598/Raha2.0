@@ -133,7 +133,7 @@ export default function LoginScreen() {
             <View style={styles.mark}>
               <Mountain size={34} color={Colors.onCoral} strokeWidth={2.2} />
             </View>
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
               {step === 'phone' ? s.title : s.codeTitle}
             </Text>
             <Text style={styles.subtitle}>

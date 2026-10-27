@@ -30,7 +30,7 @@ export default function SafetyTopicScreen() {
 
         {topic ? (
           <>
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={styles.title} accessibilityRole="header" textBreakStrategy="balanced">
               {topic.title}
             </Text>
             <Text style={styles.summary}>{topic.summary}</Text>
