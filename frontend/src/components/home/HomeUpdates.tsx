@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { CloudRain, ChevronRight } from 'lucide-react-native';
 import { Colors, Typography, Radii } from '@/constants/theme';
 import { useFeedStore, formatAgo } from '@/services/feedStore';
+import { Skeleton, useDelayedFlag } from '@/components/common/Skeleton';
 import { useRevalidate } from '@/hooks/use-revalidate';
 
 // Real conditions and latest public updates for the area, linked to the Activity articles.
@@ -15,6 +16,7 @@ export function HomeUpdates() {
   }, [hydrate, refresh]);
 
   useRevalidate(() => void refresh(), status === 'offline');
+  const showSkeleton = useDelayedFlag(status === 'loading' && !items.some((i) => i.id === 'weather-chungthang'));
 
   const weather = items.find((i) => i.id === 'weather-chungthang');
   const news = items.filter((i) => i.category !== 'weather').slice(0, 3);
@@ -37,10 +39,18 @@ export function HomeUpdates() {
           </View>
           <ChevronRight size={18} color={Colors.text3} />
         </Pressable>
+      ) : status === 'loading' ? (
+        showSkeleton ? (
+          <View style={styles.weatherCard} accessibilityLabel="Loading live conditions">
+            <Skeleton width={22} height={22} radius={11} />
+            <View style={styles.weatherText}>
+              <Skeleton height={16} width="60%" />
+              <Skeleton height={12} width="85%" style={{ marginTop: 6 }} />
+            </View>
+          </View>
+        ) : null
       ) : (
-        <Text style={styles.muted}>
-          {status === 'loading' ? 'Loading live conditions…' : 'Live conditions unavailable. Check your connection.'}
-        </Text>
+        <Text style={styles.muted}>Live conditions unavailable. Check your connection.</Text>
       )}
 
       {news.length > 0 && (

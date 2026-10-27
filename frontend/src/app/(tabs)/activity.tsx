@@ -6,6 +6,7 @@ import { CloudRain, Activity as Pulse, Newspaper, ChevronDown, ExternalLink, Wif
 import { Colors, Typography, Spacing, Radii, Shadows } from '@/constants/theme';
 import { Pill } from '@/components/common/Pill';
 import { useFeedStore, formatAgo } from '@/services/feedStore';
+import { Skeleton, useDelayedFlag } from '@/components/common/Skeleton';
 import { useRevalidate } from '@/hooks/use-revalidate';
 import type { FeedCategory, FeedItem } from '@/types';
 
@@ -35,7 +36,22 @@ function dayLabel(iso: string): string {
   return 'Earlier';
 }
 
-function FeedCard({ item, expanded, onToggle }: { item: FeedItem; expanded: boolean; onToggle: () => void }) {
+// With no item it draws the same card as gray blocks, so the list does not jump when data arrives.
+function FeedCard({ item, expanded, onToggle }: { item: FeedItem | null; expanded: boolean; onToggle: () => void }) {
+  if (!item) {
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Skeleton width={40} height={40} radius={20} />
+          <View style={styles.cardText}>
+            <Skeleton height={16} width="92%" />
+            <Skeleton height={16} width="64%" />
+            <Skeleton height={12} width="40%" />
+          </View>
+        </View>
+      </View>
+    );
+  }
   const meta = CATEGORY_META[item.category];
   const Icon = meta.Icon;
   return (
@@ -121,6 +137,8 @@ export default function ActivityScreen() {
 
   useRevalidate(() => void refresh(), status === 'offline');
 
+  const showSkeleton = useDelayedFlag(status === 'loading' && items.length === 0);
+
   const onRefresh = useCallback(() => refresh(true), [refresh]);
 
   const groups = useMemo(() => {
@@ -192,6 +210,14 @@ export default function ActivityScreen() {
             ))}
           </View>
         ))}
+
+        {showSkeleton && (
+          <View style={styles.section} accessibilityLabel="Loading updates">
+            {[0, 1, 2, 3].map((i) => (
+              <FeedCard key={i} item={null} expanded={false} onToggle={() => {}} />
+            ))}
+          </View>
+        )}
 
         {groups.length === 0 && status !== 'loading' && (
           <View style={styles.emptyContainer}>
