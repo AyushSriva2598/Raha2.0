@@ -46,7 +46,7 @@ export const TERRAIN_HTML = `<!doctype html>
     return fetch(ONLINE[layer](z,x,y)).then(function(r){ if(!r.ok) throw new Error('tile '+r.status); return r.arrayBuffer(); }).then(function(d){ return {data:d}; });
   });
   var empty = function(){ return {type:'FeatureCollection',features:[]}; };
-  var S = { usePack:false, lake:null, frames:[], idx:0, layers:{satellite:false,history:true,baseline:true}, rotate:false, exag:1.5, ready:false, inset:230 };
+  var S = { usePack:false, lake:null, frames:[], idx:0, layers:{satellite:false,history:true,baseline:true}, rotate:false, exag:1.5, ready:false, inset:230, reduceMotion:false };
   var map, rafId = null;
 
   function build(lake){
@@ -129,7 +129,7 @@ export const TERRAIN_HTML = `<!doctype html>
 
   function frameCamera(animated){
     // The app's panels cover the bottom 'inset' px, so the lake is framed above them.
-    map.easeTo({center:S.lake.center,zoom:12.2,pitch:52,bearing:-20,padding:{top:70,bottom:S.inset,left:0,right:0},duration:animated?1200:0});
+    map.easeTo({center:S.lake.center,zoom:12.2,pitch:52,bearing:-20,padding:{top:70,bottom:S.inset,left:0,right:0},duration:animated&&!S.reduceMotion?1200:0});
   }
 
   function spin(){
@@ -148,7 +148,7 @@ export const TERRAIN_HTML = `<!doctype html>
       } else if(m.type==='init'){
         S.usePack = !!m.usePack && PACK.loaded;
         S.lake=m.lake; S.frames=m.frames; S.idx=Math.min(m.index||0,m.frames.length-1);
-        if(m.layers) S.layers=m.layers; if(m.inset!=null) S.inset=m.inset;
+        if(m.layers) S.layers=m.layers; if(m.inset!=null) S.inset=m.inset; S.reduceMotion=!!m.reduceMotion;
         if(!map){ build(m.lake); }
         else if(S.ready){
           drawFrame(); applyLayers(); frameCamera(true); post({type:'ready'});
@@ -156,7 +156,7 @@ export const TERRAIN_HTML = `<!doctype html>
       } else if(m.type==='frames'){ S.frames=m.frames; S.idx=Math.min(S.idx,m.frames.length-1); drawFrame(); }
       else if(m.type==='frame'){ S.idx=m.index; drawFrame(); }
       else if(m.type==='layers'){ S.layers=m.layers; applyLayers(); }
-      else if(m.type==='rotate'){ S.rotate=!!m.value; if(S.rotate && !rafId){ rafId=requestAnimationFrame(spin); } }
+      else if(m.type==='rotate'){ S.rotate=!!m.value && !S.reduceMotion; if(m.value && S.reduceMotion) post({type:'rotate',value:false}); if(S.rotate && !rafId){ rafId=requestAnimationFrame(spin); } }
       else if(m.type==='inset'){
         // Only shift the framing for the space the sheet covers. Never touch zoom, tilt or rotation.
         S.inset=m.value; if(map&&S.ready) map.setPadding({top:70,bottom:S.inset,left:0,right:0});

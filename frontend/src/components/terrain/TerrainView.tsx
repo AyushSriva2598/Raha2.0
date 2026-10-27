@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { Colors, Typography } from '@/constants/theme';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -29,6 +30,7 @@ const SOURCE = { html: TERRAIN_HTML, baseUrl: 'https://raha.local/' };
 
 export function TerrainView({ data, frameIndex, layers, rotate, resetKey, bottomInset, onRotateStopped }: TerrainViewProps) {
   const ref = useRef<WebView>(null);
+  const reduceMotion = useReducedMotion();
   const [pageLoaded, setPageLoaded] = useState(false);
   // The scene is ready when the page reports ready for the lake/data currently shown.
   const [readyKey, setReadyKey] = useState('');
@@ -69,7 +71,7 @@ export function TerrainView({ data, frameIndex, layers, rotate, resetKey, bottom
       }
       send({ type: 'pack', done: true, dem: {}, sat: {} });
     }
-    send({ type: 'init', lake: data.lake, frames: data.frames, index: frameIndex, layers, inset: bottomInset, usePack: !!pack });
+    send({ type: 'init', lake: data.lake, frames: data.frames, index: frameIndex, layers, inset: bottomInset, usePack: !!pack, reduceMotion });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageLoaded, data?.lake.id, send]);
 
