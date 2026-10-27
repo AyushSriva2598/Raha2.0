@@ -1,3 +1,4 @@
+import type { SharedValue } from 'react-native-reanimated';
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -47,6 +48,9 @@ export interface HomeBottomSheetProps {
   onOpenTips: () => void;
   onOpenSos: () => void;
   onSelectShelter?: (shelter: SafePoint) => void;
+  /** Fractional snap index, so the screen can fade its floating controls as the sheet rises. */
+  animatedIndex?: SharedValue<number>;
+  onSnapChange?: (index: number) => void;
 }
 
 export function HomeBottomSheet({
@@ -59,6 +63,8 @@ export function HomeBottomSheet({
   onOpenTips,
   onOpenSos,
   onSelectShelter,
+  animatedIndex,
+  onSnapChange,
 }: HomeBottomSheetProps) {
   const sheetRef = useRef<BottomSheet>(null);
   const [currentSnapIndex, setCurrentSnapIndex] = useState(1); // default 424px
@@ -68,7 +74,8 @@ export function HomeBottomSheet({
 
   const handleSheetChanges = useCallback((index: number) => {
     setCurrentSnapIndex(index);
-  }, []);
+    onSnapChange?.(index);
+  }, [onSnapChange]);
 
   const isExpanded = currentSnapIndex === 2;
 
@@ -95,6 +102,7 @@ export function HomeBottomSheet({
       index={1} // Default collapsed snap (424px)
       snapPoints={snapPoints}
       onChange={handleSheetChanges}
+      animatedIndex={animatedIndex}
       handleIndicatorStyle={styles.dragIndicator}
       backgroundStyle={styles.sheetBackground}
       style={Shadows.sheet}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Modal, Text, Pressable } from 'react-native';
+import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useAppStore } from '@/store/useAppStore';
 import { HomeFabs } from '@/components/home/HomeFabs';
 import { HomeHeader } from '@/components/home/HomeHeader';
@@ -31,6 +32,12 @@ export default function HomeScreen() {
   const [mapType, setMapType] = useState<'standard' | 'satellite' | 'terrain'>('standard');
   const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // The header and map buttons belong to the map: they fade out as the sheet rises over it.
+  const sheetIndex = useSharedValue(1);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const chromeStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(sheetIndex.get(), [1, 1.6], [1, 0], Extrapolation.CLAMP),
+  }));
   const [overrideState, setOverrideState] = useState<HomeHazardState | null>(null);
 
   useEffect(() => {
@@ -83,10 +90,12 @@ export default function HomeScreen() {
       />
 
       {/* 2. Floating Minimal Header Over White Fade */}
-      <HomeHeader
-        onToggleMenu={() => setIsMenuOpen(true)}
-      />
-      <HomeFabs mapType={mapType} onToggleLayers={toggleMapLayers} />
+      <Animated.View
+        pointerEvents={sheetExpanded ? 'none' : 'box-none'}
+        style={[StyleSheet.absoluteFill, chromeStyle]}>
+        <HomeHeader onToggleMenu={() => setIsMenuOpen(true)} />
+        <HomeFabs mapType={mapType} onToggleLayers={toggleMapLayers} />
+      </Animated.View>
 
       {/* 3. Bottom Sheet in Front (120px / 424px / ~85%) */}
       <HomeBottomSheet
@@ -98,6 +107,8 @@ export default function HomeScreen() {
         events={events}
         onOpenTips={() => setIsTipsModalOpen(true)}
         onOpenSos={() => openSosModal(true)}
+        animatedIndex={sheetIndex}
+        onSnapChange={(i) => setSheetExpanded(i === 2)}
       />
 
       {/* 4. "What To Do" Emergency Tips Sheet Modal */}
