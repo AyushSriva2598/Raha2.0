@@ -1,5 +1,5 @@
 import type { SharedValue } from 'react-native-reanimated';
-import React, { useMemo, useRef, useState, useCallback } from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   WifiOff,
   ChevronRight,
   ShieldAlert,
+  Phone,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Colors, Typography, Radii, Shadows, Spacing, RiskLevel } from '@/constants/theme';
@@ -30,6 +31,7 @@ import { SosButton } from '@/components/common/SosButton';
 import { HomeUpdates } from '@/components/home/HomeUpdates';
 import { LakeConfig } from '@/constants/lakes';
 import { SafePoint, EventLog } from '@/types';
+import { useAppStore } from '@/store/useAppStore';
 
 export type HomeHazardState =
   | 'FLOOD_PATH'
@@ -65,16 +67,14 @@ export function HomeBottomSheet({
   animatedIndex,
 }: HomeBottomSheetProps) {
   const sheetRef = useRef<BottomSheet>(null);
-  const [currentSnapIndex, setCurrentSnapIndex] = useState(1); // default 424px
 
-  // Snap points: peek, default (map stays mostly visible), expanded
-  const snapPoints = useMemo(() => [96, '38%', '78%'], []);
-
-  const handleSheetChanges = useCallback((index: number) => {
-    setCurrentSnapIndex(index);
-  }, []);
-
-  const isExpanded = currentSnapIndex === 2;
+  // Snap points: peek (the one-line status stays readable above the raised SOS button), default (map
+  // stays mostly visible), expanded. Dynamic sizing is off so the sheet only ever rests on these three.
+  const snapPoints = useMemo(() => [140, '42%', '80%'], []);
+  const contacts = useAppStore((st) => st.userProfile?.contacts ?? []);
+  const lakeKm = Math.round(
+    haversineKm(lake.coordinates[1], lake.coordinates[0], lake.primarySettlement.coordinates[1], lake.primarySettlement.coordinates[0])
+  );
 
   const handleStartSafeRoute = () => {
     router.push('/map' as any);
@@ -98,23 +98,15 @@ export function HomeBottomSheet({
       ref={sheetRef}
       index={1} // Default collapsed snap (424px)
       snapPoints={snapPoints}
-      onChange={handleSheetChanges}
       animatedIndex={animatedIndex}
+      enableDynamicSizing={false}
       handleIndicatorStyle={styles.dragIndicator}
       backgroundStyle={styles.sheetBackground}
       style={Shadows.sheet}>
       <BottomSheetScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {/* Offline Banner indicator (if in offline state or cached) */}
-        {state === 'OFFLINE' && (
-          <View style={styles.offlineBanner}>
-            <WifiOff size={16} color={Colors.text2} />
-            <Text style={styles.offlineText}>
-              Showing saved data from 10:14 AM • Offline map tiles active
-            </Text>
-          </View>
-        )}
+        <PeekHeader state={state} lakeName={lake.name} surgeMinutes={surgeMinutes} />
 
         {/* =========================================================================
             STATE 1: IN FLOOD PATH (Red / Threat Active)
@@ -123,12 +115,6 @@ export function HomeBottomSheet({
           <View style={styles.stateContainer}>
             {/* Zone Card (dangerTint, radius 24) */}
             <View style={styles.zoneCard}>
-              {/* White Pill Header */}
-              <View style={styles.whitePillHeader}>
-                <AlertTriangle size={20} color={Colors.danger} strokeWidth={2.4} />
-                <Text style={styles.whitePillText}>You are in the flood path</Text>
-              </View>
-
               {/* 2x2 StatTile Grid */}
               <View style={styles.statGrid}>
                 <View style={styles.gridRow}>
@@ -140,18 +126,18 @@ export function HomeBottomSheet({
                     style={styles.gridTile}
                   />
                   <StatTile
-                    label="Lake breach point"
-                    value={lake.primarySafeHaven.distanceKm}
-                    unit="km away"
+                    label="Distance to the lake"
+                    value={lakeKm}
+                    unit="km upstream"
                     accent="neutral"
                     style={styles.gridTile}
                   />
                 </View>
                 <View style={styles.gridRow}>
                   <StatTile
-                    label="River level"
-                    value="+2.8"
-                    unit="m, rising"
+                    label="Alert level"
+                    value={riskLevel}
+                    unit="demo scenario"
                     accent="danger"
                     style={styles.gridTile}
                   />
@@ -175,7 +161,7 @@ export function HomeBottomSheet({
                 </Text>
               </View>
               <Pill
-                label="LIVE"
+                label="DEMO"
                 variant="white"
                 size="sm"
                 textStyle={{ color: Colors.danger, fontSize: 11 }}
@@ -274,10 +260,6 @@ export function HomeBottomSheet({
         {state === 'ALL_CLEAR' && (
           <View style={styles.stateContainer}>
             <View style={styles.allClearContainer}>
-              <View style={styles.greenCheckCircle}>
-                <CheckCircle size={32} color={Colors.safe} strokeWidth={2.5} />
-              </View>
-              <Text style={styles.allClearTitle}>No active warnings near you</Text>
               <Text style={styles.allClearSubtext}>
                 Demo threat level for {lake.name}. No live lake sensors are connected yet.
               </Text>
@@ -308,8 +290,6 @@ export function HomeBottomSheet({
         {state === 'LOCATION_DENIED' && (
           <View style={styles.stateContainer}>
             <View style={styles.deniedContainer}>
-              <MapPin size={28} color={Colors.dangerDark} />
-              <Text style={styles.deniedTitle}>Location Access Required</Text>
               <Text style={styles.deniedBody}>
                 Raha requires high-precision GPS to immediately compute whether you
                 stand in an active glacial outburst flood wave reach.
@@ -332,98 +312,75 @@ export function HomeBottomSheet({
           </View>
         )}
 
-        {/* =========================================================================
-            EXPANDED SHEET CONTENT (revealed when pulled up to ~85%)
-           ========================================================================= */}
-        {isExpanded && (
-          <View style={styles.expandedSection}>
-            <View style={styles.expandedDivider} />
+        {/* More, below the fold. Always rendered so nothing pops in when the sheet reaches the top. */}
+        <View style={styles.expandedSection}>
+          <View style={styles.expandedDivider} />
 
-            {/* 1. Nearest Shelters & High Ground */}
-            <View style={styles.expandedBlock}>
-              <View style={styles.expandedHeaderRow}>
-                <ShieldCheck size={18} color={Colors.safe} />
-                <Text style={styles.expandedTitle}>Nearest Safe Ground & Shelters</Text>
+          <View style={styles.expandedBlock}>
+            <View style={styles.expandedHeaderRow}>
+              <ShieldCheck size={18} color={Colors.safe} />
+              <Text style={styles.expandedTitle} textBreakStrategy="balanced">
+                Nearest safe ground
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => onSelectShelter && onSelectShelter(nearestSafePoint as any)}
+              style={styles.shelterCard}>
+              <View style={styles.shelterLeft}>
+                <Text style={styles.shelterName}>{nearestSafePoint.name}</Text>
+                <Text style={styles.shelterMeta}>
+                  +{lake.primarySafeHaven.elevationGainM} m above the river · {lake.primarySafeHaven.distanceKm} km
+                </Text>
               </View>
+              <View style={styles.shelterRight}>
+                <Text style={styles.shelterMinutes}>{lake.primarySafeHaven.walkTimeMinutes}</Text>
+                <Text style={styles.shelterUnit}>min on foot</Text>
+              </View>
+            </Pressable>
+          </View>
 
-              <Pressable
-                onPress={() => onSelectShelter && onSelectShelter(nearestSafePoint as any)}
-                style={styles.shelterCard}>
-                <View style={styles.shelterLeft}>
-                  <Text style={styles.shelterName}>{nearestSafePoint.name}</Text>
-                  <Text style={styles.shelterMeta}>
-                    +{lake.primarySafeHaven.elevationGainM}m elevation gain • Solid bedrock ridge
-                  </Text>
-                </View>
-                <View style={styles.shelterRight}>
-                  <Text style={styles.shelterMinutes}>
-                    {lake.primarySafeHaven.walkTimeMinutes}
-                  </Text>
-                  <Text style={styles.shelterUnit}>min on foot</Text>
-                </View>
+          <View style={styles.expandedBlock}>
+            <View style={styles.expandedHeaderRow}>
+              <Users size={18} color={Colors.you} />
+              <Text style={styles.expandedTitle}>Your SOS contacts</Text>
+            </View>
+            {contacts.length === 0 ? (
+              <Pressable onPress={() => router.push('/contacts' as any)} style={styles.shelterCard} accessibilityRole="button">
+                <Text style={styles.shelterMeta}>Nobody gets your SOS yet. Add someone you trust.</Text>
+                <ChevronRight size={18} color={Colors.text3} />
               </Pressable>
+            ) : (
+              contacts.slice(0, 3).map((c) => (
+                <View key={c.contactId} style={styles.kinCard}>
+                  <View style={styles.kinAvatar}>
+                    <Text style={styles.kinAvatarText}>
+                      {c.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.kinTextStack}>
+                    <Text style={styles.kinName}>{c.name}</Text>
+                    <Text style={styles.kinSub}>
+                      {c.relation} · {c.isActive ? 'gets your SOS' : 'SOS off'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => Linking.openURL(`tel:${c.phone.replace(/\s/g, '')}`)}
+                    style={({ pressed }) => [styles.callButton, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Call ${c.name}`}>
+                    <Phone size={18} color={Colors.onCoral} />
+                  </Pressable>
+                </View>
+              ))
+            )}
+          </View>
 
-              <View style={styles.shelterCard}>
-                <View style={styles.shelterLeft}>
-                  <Text style={styles.shelterName}>Pheriche Moraine High Ground Camp</Text>
-                  <Text style={styles.shelterMeta}>
-                    +140m elevation gain • Solar backup & radio station
-                  </Text>
-                </View>
-                <View style={styles.shelterRight}>
-                  <Text style={styles.shelterMinutes}>35</Text>
-                  <Text style={styles.shelterUnit}>min on foot</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* 2. Family Status ("People you protect") */}
-            <View style={styles.expandedBlock}>
-              <View style={styles.expandedHeaderRow}>
-                <Users size={18} color={Colors.you} />
-                <Text style={styles.expandedTitle}>People You Protect</Text>
-              </View>
-
-              <View style={styles.kinCard}>
-                <View style={styles.kinAvatar}>
-                  <Text style={styles.kinAvatarText}>PL</Text>
-                </View>
-                <View style={styles.kinTextStack}>
-                  <Text style={styles.kinName}>Pasang Lhamo (Spouse)</Text>
-                  <Text style={styles.kinSub}>Chungthang Monastery Ridge</Text>
-                </View>
-                <Pill
-                  label="Safe · 2 min"
-                  variant="safe"
-                  size="sm"
-                  icon={<CheckCircle size={12} color={Colors.safeDark} />}
-                />
-              </View>
-
-              <View style={styles.kinCard}>
-                <View style={styles.kinAvatar}>
-                  <Text style={styles.kinAvatarText}>MS</Text>
-                </View>
-                <View style={styles.kinTextStack}>
-                  <Text style={styles.kinName}>Karma Lepcha (Village Head)</Text>
-                  <Text style={styles.kinSub}>Pheriche High Camp</Text>
-                </View>
-                <Pill
-                  label="Safe · 8 min"
-                  variant="safe"
-                  size="sm"
-                  icon={<CheckCircle size={12} color={Colors.safeDark} />}
-                />
-              </View>
-            </View>
-
-            {/* 3. Alert History Preview */}
+          {events.length > 0 && (
             <View style={styles.expandedBlock}>
               <View style={styles.expandedHeaderRow}>
                 <Clock size={18} color={Colors.text2} />
-                <Text style={styles.expandedTitle}>Recent Hazard Timeline</Text>
+                <Text style={styles.expandedTitle}>Recent lake events</Text>
               </View>
-
               {events.slice(0, 3).map((event) => (
                 <View key={event.eventId} style={styles.timelineRow}>
                   <View
@@ -438,18 +395,60 @@ export function HomeBottomSheet({
                     <Text style={styles.timelineTitle}>{event.title}</Text>
                     <Text style={styles.timelineTime}>{event.timestamp}</Text>
                   </View>
-                  <ChevronRight size={16} color={Colors.text3} />
                 </View>
               ))}
             </View>
-          </View>
-        )}
+          )}
+
+          <Text style={styles.attribution}>River course © OpenStreetMap contributors</Text>
+        </View>
       </BottomSheetScrollView>
     </BottomSheet>
   );
 }
 
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const r = (d: number) => (d * Math.PI) / 180;
+  const a = Math.sin(r(lat2 - lat1) / 2) ** 2 + Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(r(lon2 - lon1) / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(a));
+}
+
+// The one line that must be readable even when the sheet is at its lowest: what is happening, and what
+// it means for you. Icon, colour and words all say the same thing, so colour is never the only signal.
+function PeekHeader({ state, lakeName, surgeMinutes }: { state: HomeHazardState; lakeName: string; surgeMinutes: number }) {
+  const content = {
+    FLOOD_PATH: { Icon: AlertTriangle, color: Colors.danger, bg: Colors.dangerTint, title: 'You are in the flood path', sub: `Go to high ground now · wave in about ${surgeMinutes} min (demo)` },
+    WATCH_ADVISORY: { Icon: Clock, color: Colors.watchText, bg: '#FFF3D6', title: 'Be ready to leave', sub: `Advisory for ${lakeName} (demo level)` },
+    ALL_CLEAR: { Icon: CheckCircle, color: Colors.safe, bg: Colors.safeTint, title: 'No active warnings near you', sub: `${lakeName} · demo level, no live sensors yet` },
+    OFFLINE: { Icon: WifiOff, color: Colors.text2, bg: Colors.coralTint, title: 'You are offline', sub: 'Showing the last saved data' },
+    LOCATION_DENIED: { Icon: MapPin, color: Colors.dangerDark, bg: Colors.dangerTint, title: 'Location is off', sub: 'Turn it on to see if you are in the flood path' },
+  }[state];
+  const { Icon } = content;
+  return (
+    <View style={styles.peek} accessibilityRole="header" accessibilityLiveRegion="polite">
+      <View style={[styles.peekIcon, { backgroundColor: content.bg }]}>
+        <Icon size={24} color={content.color} strokeWidth={2.4} />
+      </View>
+      <View style={styles.peekText}>
+        <Text style={styles.peekTitle} numberOfLines={1}>
+          {content.title}
+        </Text>
+        <Text style={styles.peekSub} numberOfLines={2}>
+          {content.sub}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  peek: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingTop: 4, paddingBottom: 16 },
+  peekIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  peekText: { flex: 1, gap: 2 },
+  peekTitle: { fontFamily: Typography.family.bold, fontSize: Typography.sizes.bodyLarge, color: Colors.ink },
+  peekSub: { fontFamily: Typography.family.regular, fontSize: Typography.sizes.meta, lineHeight: 19, color: Colors.text2 },
+  callButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.coral, alignItems: 'center', justifyContent: 'center' },
+  attribution: { marginTop: 8, fontFamily: Typography.family.regular, fontSize: Typography.sizes.caption, color: Colors.text3, textAlign: 'center' },
   sheetBackground: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: Radii.sheet,

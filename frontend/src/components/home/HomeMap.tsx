@@ -9,15 +9,12 @@ import MapView, {
   PROVIDER_GOOGLE,
   type Region,
 } from 'react-native-maps';
-import { ShieldCheck, AlertTriangle, Waves } from 'lucide-react-native';
+import { ShieldCheck, Waves } from 'lucide-react-native';
 import { Colors, Typography, Radii, Shadows } from '@/constants/theme';
-import { Pill } from '@/components/common/Pill';
 import { LakeConfig } from '@/constants/lakes';
 import {
-  CHUNGTHANG_ESCAPE_ROUTE,
-  CHUNGTHANG_FLOOD_REPORT,
   CHUNGTHANG_HIGH_GROUND,
-  TEESTA_FLOOD_CORRIDOR,
+  TEESTA_RIVER_COURSE,
 } from '@/constants/geoData';
 import { useMapScale } from '@/hooks/use-map-scale';
 
@@ -73,9 +70,9 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           left: 12,
           right: 12,
         }}>
-        {/* Simulated flood corridor along the Teesta: wide translucent stroke plus a thin core */}
+        {/* The Teesta, the path a lake outburst would take: wide translucent band plus a thin core */}
         <Polyline
-          coordinates={TEESTA_FLOOD_CORRIDOR}
+          coordinates={TEESTA_RIVER_COURSE}
           strokeColor="rgba(70, 180, 206, 0.35)"
           strokeWidth={px(18)}
           lineCap="round"
@@ -83,7 +80,7 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           zIndex={3}
         />
         <Polyline
-          coordinates={TEESTA_FLOOD_CORRIDOR}
+          coordinates={TEESTA_RIVER_COURSE}
           strokeColor="#46B4CE"
           strokeWidth={px(3)}
           lineCap="round"
@@ -101,25 +98,6 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           zIndex={2}
         />
 
-        {/* Safe escape route: white casing + dashed green */}
-        <Polyline
-          coordinates={CHUNGTHANG_ESCAPE_ROUTE}
-          strokeColor="#FFFFFF"
-          strokeWidth={px(7)}
-          lineCap="round"
-          lineJoin="round"
-          zIndex={10}
-        />
-        <Polyline
-          coordinates={CHUNGTHANG_ESCAPE_ROUTE}
-          strokeColor={Colors.safe}
-          strokeWidth={px(4)}
-          lineDashPattern={[10, 6]}
-          lineCap="round"
-          lineJoin="round"
-          zIndex={11}
-        />
-
         {/* High ground destination */}
         <Marker
           coordinate={CHUNGTHANG_HIGH_GROUND}
@@ -134,23 +112,6 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
             <PinDrop color={Colors.safe}>
               <ShieldCheck size={13} color={Colors.safeDark} strokeWidth={2.8} />
             </PinDrop>
-          </View>
-        </Marker>
-
-        {/* Recent flood report */}
-        <Marker
-          coordinate={CHUNGTHANG_FLOOD_REPORT}
-          anchor={{ x: 0.5, y: 0.5 }}
-          tracksViewChanges={tracksViewChanges}
-          zIndex={15}>
-          <View style={[styles.markerScale, { transform: [{ scale }] }]}>
-            <Pill
-              label="Flood · 2 h ago"
-              variant="danger"
-              size="sm"
-              icon={<AlertTriangle size={12} color={Colors.dangerDark} />}
-              style={styles.floodReportPill}
-            />
           </View>
         </Marker>
 
@@ -225,11 +186,5 @@ const styles = StyleSheet.create({
     fontFamily: Typography.family.bold,
     fontSize: 12,
     color: '#FFFFFF',
-  },
-  floodReportPill: {
-    ...Shadows.card,
-    backgroundColor: '#FFFFFF',
-    borderColor: Colors.danger,
-    borderWidth: 1.5,
   },
 });
