@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronRight, HandHeart, HeartPulse, LifeBuoy, Waves } from 'lucide-react-native';
 import { Colors, Radii, Shadows, Typography } from '@/constants/theme';
+import { HeroCard } from '@/components/common/HeroCard';
 import { SearchField } from '@/components/common/SearchField';
 import { useAppStore } from '@/store/useAppStore';
 import {
@@ -43,6 +44,15 @@ export default function SafetyScreen() {
         contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 8 }]}
         keyboardShouldPersistTaps="handled">
         <SearchField value={query} onChangeText={setQuery} placeholder={copy.searchPlaceholder} />
+
+        {!query && (
+          <HeroCard
+            title={copy.heroTitle}
+            subtitle={copy.heroSubtitle}
+            actionLabel={copy.heroAction}
+            onAction={() => router.push({ pathname: '/safety-topic/[topic]', params: { topic: 'prepare' } })}
+          />
+        )}
 
         <Text style={styles.title} accessibilityRole="header">
           {copy.title}

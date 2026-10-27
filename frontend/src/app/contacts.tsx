@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Phone, Trash2, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Phone, Trash2 } from 'lucide-react-native';
 import { Colors, Radii, Typography } from '@/constants/theme';
 import { SearchField } from '@/components/common/SearchField';
 import { Pill } from '@/components/common/Pill';
-import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { HeroCard } from '@/components/common/HeroCard';
 import { AddEmergencyContactModal } from '@/components/add-contact-modal';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -25,6 +25,8 @@ export default function ContactsScreen() {
   const { userProfile, toggleContact, removeContact, openAddContactModal } = useAppStore();
   const [tab, setTab] = useState<Tab>('book');
   const [query, setQuery] = useState('');
+
+  const alertCount = (userProfile?.contacts ?? []).filter((c) => c.isActive).length;
 
   const contacts = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -54,6 +56,18 @@ export default function ContactsScreen() {
             Contacts
           </Text>
         </View>
+
+        <HeroCard
+          eyebrow="SOS CONTACTS"
+          title="Your emergency circle"
+          subtitle={
+            alertCount === 0
+              ? 'Nobody will get your SOS yet. Add someone you trust.'
+              : `${alertCount} ${alertCount === 1 ? 'person gets' : 'people get'} a text when you press SOS.`
+          }
+          actionLabel="Add contact"
+          onAction={() => openAddContactModal(true)}
+        />
 
         <SearchField value={query} onChangeText={setQuery} placeholder="Search contacts" />
 
@@ -106,11 +120,6 @@ export default function ContactsScreen() {
                 </Pressable>
               </View>
             ))}
-            <PrimaryButton
-              title="Add emergency contact"
-              icon={<UserPlus size={18} color="#FFFFFF" />}
-              onPress={() => openAddContactModal(true)}
-            />
           </>
         ) : (
           <Text style={styles.empty}>

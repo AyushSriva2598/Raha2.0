@@ -16,7 +16,16 @@ export interface SafetyTopic {
 
 export const SAFETY_SCREEN_COPY: Record<
   LanguageCode,
-  { title: string; subtitle: string; draftNotice: string; searchPlaceholder: string; noResults: string }
+  {
+    title: string;
+    subtitle: string;
+    draftNotice: string;
+    searchPlaceholder: string;
+    noResults: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroAction: string;
+  }
 > = {
   en: {
     title: 'Safety Tips',
@@ -24,6 +33,9 @@ export const SAFETY_SCREEN_COPY: Record<
     draftNotice: 'Draft guidance. Follow instructions from local authorities first.',
     searchPlaceholder: 'Search safety tips',
     noResults: 'No tips match your search.',
+    heroTitle: 'Be ready before the water rises',
+    heroSubtitle: 'Five minutes now can save hours later. Start with how to prepare your family.',
+    heroAction: 'Start with preparing',
   },
   hi: {
     title: 'सुरक्षा सुझाव',
@@ -31,6 +43,9 @@ export const SAFETY_SCREEN_COPY: Record<
     draftNotice: 'यह मसौदा मार्गदर्शन है। पहले स्थानीय अधिकारियों के निर्देश मानें।',
     searchPlaceholder: 'सुरक्षा सुझाव खोजें',
     noResults: 'कोई सुझाव नहीं मिला।',
+    heroTitle: 'पानी बढ़ने से पहले तैयार रहें',
+    heroSubtitle: 'अभी के पाँच मिनट बाद में घंटों बचा सकते हैं। अपने परिवार को तैयार करने से शुरू करें।',
+    heroAction: 'तैयारी से शुरू करें',
   },
   ne: {
     title: 'सुरक्षा सुझाव',
@@ -38,6 +53,9 @@ export const SAFETY_SCREEN_COPY: Record<
     draftNotice: 'यो मस्यौदा मार्गदर्शन हो। पहिले स्थानीय अधिकारीको निर्देशन पालना गर्नुहोस्।',
     searchPlaceholder: 'सुरक्षा सुझाव खोज्नुहोस्',
     noResults: 'कुनै सुझाव भेटिएन।',
+    heroTitle: 'पानी बढ्नु अघि तयार रहनुहोस्',
+    heroSubtitle: 'अहिलेका पाँच मिनेटले पछि घण्टा बचाउन सक्छ। परिवारलाई तयार पार्नेबाट सुरु गर्नुहोस्।',
+    heroAction: 'तयारीबाट सुरु गर्नुहोस्',
   },
 };
 
