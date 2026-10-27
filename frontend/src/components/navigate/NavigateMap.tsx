@@ -1,7 +1,7 @@
-import { DestinationPin, YouPin, ZoneBeacon } from '@/components/common/MapPins';
+import { DestinationPin, PinDrop, YouPin } from '@/components/common/MapPins';
 import { RAHA_MAP_STYLE } from '@/constants/mapStyle';
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Pressable, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import { Pencil } from 'lucide-react-native';
 import { Colors, Typography } from '@/constants/theme';
@@ -11,7 +11,7 @@ import {
   LakeHazardZone,
 } from '@/components/common/LakeCircle';
 import { ComputedRoute, RouteCoordinate } from '@/services/routeCalculator';
-import { metersPerPixel, useMapScale } from '@/hooks/use-map-scale';
+import { useMapScale } from '@/hooks/use-map-scale';
 
 export type NavigateMapType = 'standard' | 'satellite' | 'terrain';
 
@@ -48,9 +48,7 @@ export function NavigateMap({
   onPressDestination,
 }: NavigateMapProps) {
   const mapRef = useRef<MapView>(null);
-  const { scale, latDelta, tracksViewChanges, onRegionChangeComplete } = useMapScale(INITIAL_DELTA);
-  const { height: screenH } = useWindowDimensions();
-  const metersPerPx = metersPerPixel(latDelta, screenH);
+  const { scale, tracksViewChanges, onRegionChangeComplete } = useMapScale(INITIAL_DELTA);
   const inRouteMode = destination !== null && routes.length > 0;
 
   const initialRegion: Region = {
@@ -110,24 +108,15 @@ export function NavigateMap({
                 lineDashPattern={style.lineDashPattern}
                 zIndex={1}
               />
-              {zone.radiusMeters / metersPerPx < 32 && (
-                <Marker
-                  coordinate={{ latitude: zone.latitude, longitude: zone.longitude }}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                  flat={false}
-                  tracksViewChanges={tracksViewChanges}
-                  zIndex={1}>
-                  <ZoneBeacon color={style.strokeColor} />
-                </Marker>
-              )}
               <Marker
                 coordinate={{ latitude: zone.latitude, longitude: zone.longitude }}
-                anchor={{ x: 0.5, y: 0.5 }}
+                anchor={{ x: 0.5, y: 1 }}
                 flat={false}
                 tracksViewChanges={tracksViewChanges}
                 zIndex={2}>
                 <View style={[styles.markerBox, { transform: [{ scale }] }]}>
                   <LakeMarkerPill name={zone.name} riskLevel={zone.riskLevel} />
+                  <PinDrop color={style.strokeColor} />
                 </View>
               </Marker>
             </React.Fragment>

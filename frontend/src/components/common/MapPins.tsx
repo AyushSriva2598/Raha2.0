@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Defs, Ellipse, LinearGradient, Path, Stop, Circle as SvgCircle } from 'react-native-svg';
 import { Flag } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 
@@ -16,27 +17,58 @@ export function YouPin() {
   );
 }
 
+function shade(hex: string, amount: number): string {
+  // amount > 0 mixes toward white, < 0 toward black
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c: number) => Math.round(amount >= 0 ? c + (255 - c) * amount : c * (1 + amount));
+  const r = mix((n >> 16) & 255);
+  const g = mix((n >> 8) & 255);
+  const b = mix(n & 255);
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
 /**
- * A fixed-size ring in the zone's risk colour. The true-radius circle on the map is exact but shrinks
- * to a speck when zoomed out; this keeps the zone findable at any zoom. It never changes the zone's
- * real extent, which the circle underneath still shows.
+ * A pin drop that reads as a solid object: gradient body lit from the top left, a glossy highlight,
+ * a white inner disc and a soft ground shadow under the tip. Colour carries the risk level (the
+ * caller also shows a text label, so colour is never the only signal). The tip is the bottom centre,
+ * so anchor the Marker at { x: 0.5, y: 1 }.
  */
-export function ZoneBeacon({ color }: { color: string }) {
+export function PinDrop({ color, children }: { color: string; children?: React.ReactNode }) {
+  const light = shade(color, 0.38);
+  const dark = shade(color, -0.28);
+  const id = `pin${color.slice(1)}`;
   return (
-    <View style={[styles.beacon, { borderColor: color, backgroundColor: `${color}33` }]}>
-      <View style={[styles.beaconCore, { backgroundColor: color }]} />
+    <View style={styles.pinBox}>
+      <Svg width={44} height={58} viewBox="0 0 44 58">
+        <Defs>
+          <LinearGradient id={id} x1="0.1" y1="0" x2="0.9" y2="1">
+            <Stop offset="0" stopColor={light} />
+            <Stop offset="0.55" stopColor={color} />
+            <Stop offset="1" stopColor={dark} />
+          </LinearGradient>
+        </Defs>
+        <Ellipse cx="22" cy="54.5" rx="9" ry="3" fill="rgba(42,27,26,0.28)" />
+        <Path
+          d="M22 54 C22 54 4 33 4 20 A18 18 0 1 1 40 20 C40 33 22 54 22 54 Z"
+          fill={`url(#${id})`}
+          stroke="#FFFFFF"
+          strokeWidth={2.5}
+          strokeLinejoin="round"
+        />
+        <Ellipse cx="14.5" cy="12.5" rx="5.5" ry="3.4" fill="rgba(255,255,255,0.42)" rotation={-28} origin="14.5, 12.5" />
+        <SvgCircle cx="22" cy="20" r="8.5" fill="#FFFFFF" />
+        <SvgCircle cx="22" cy="20" r="4.2" fill={dark} opacity={children ? 0 : 1} />
+      </Svg>
+      {children ? <View style={styles.pinIcon}>{children}</View> : null}
     </View>
   );
 }
 
 export function DestinationPin() {
   return (
-    <View style={styles.pinWrap}>
-      <View style={styles.pinHead}>
-        <Flag size={16} color="#FFFFFF" strokeWidth={2.6} />
-      </View>
-      <View style={styles.pinTail} />
-    </View>
+    <PinDrop color={Colors.coral}>
+      <Flag size={13} color={Colors.coralDeep} strokeWidth={2.8} />
+    </PinDrop>
   );
 }
 
@@ -65,40 +97,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   core: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.coral },
-  beacon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  beaconCore: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: '#FFFFFF' },
-  pinWrap: { alignItems: 'center' },
-  pinHead: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: Colors.coral,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#7A2A22',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  pinTail: {
-    width: 0,
-    height: 0,
-    marginTop: -3,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 9,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: Colors.coral,
-  },
+  pinBox: { width: 44, height: 58 },
+  pinIcon: { position: 'absolute', top: 12, left: 0, width: 44, alignItems: 'center' },
 });

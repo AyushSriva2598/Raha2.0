@@ -1,4 +1,4 @@
-import { YouPin, ZoneBeacon } from '@/components/common/MapPins';
+import { PinDrop, YouPin } from '@/components/common/MapPins';
 import { RAHA_MAP_STYLE } from '@/constants/mapStyle';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
@@ -131,6 +131,9 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
               <ShieldCheck size={14} color="#FFFFFF" strokeWidth={2.6} />
               <Text style={styles.highGroundText}>High ground</Text>
             </View>
+            <PinDrop color={Colors.safe}>
+              <ShieldCheck size={13} color={Colors.safeDark} strokeWidth={2.8} />
+            </PinDrop>
           </View>
         </Marker>
 
@@ -151,20 +154,10 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           </View>
         </Marker>
 
-        {/* Source lake: a fixed-size ring so it can be found at any zoom, with its name pill on top */}
+        {/* Source lake: name pill above a red pin drop */}
         <Marker
           coordinate={{ latitude: lake.coordinates[1], longitude: lake.coordinates[0] }}
-          anchor={{ x: 0.5, y: 0.5 }}
-          flat={false}
-          tracksViewChanges={tracksViewChanges}
-          zIndex={11}>
-          <ZoneBeacon color={Colors.danger} />
-        </Marker>
-
-        {/* Source lake name */}
-        <Marker
-          coordinate={{ latitude: lake.coordinates[1], longitude: lake.coordinates[0] }}
-          anchor={{ x: 0.5, y: 0.5 }}
+          anchor={{ x: 0.5, y: 1 }}
           tracksViewChanges={tracksViewChanges}
           zIndex={12}>
           <View style={[styles.markerScale, { transform: [{ scale }] }]}>
@@ -172,6 +165,9 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
               <Waves size={13} color="#FFFFFF" strokeWidth={2.4} />
               <Text style={styles.highGroundText}>{lake.name}</Text>
             </View>
+            <PinDrop color={Colors.danger}>
+              <Waves size={13} color={Colors.dangerDark} strokeWidth={2.8} />
+            </PinDrop>
           </View>
         </Marker>
 
