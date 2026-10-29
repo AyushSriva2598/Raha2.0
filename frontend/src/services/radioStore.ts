@@ -28,12 +28,16 @@ export const BUILT_IN_STATIONS: RadioStation[] = [
   },
 ];
 
-export type RadioStatus = 'idle' | 'connecting' | 'playing' | 'paused' | 'error' | 'unavailable';
+export type RadioStatus = 'idle' | 'connecting' | 'playing' | 'paused' | 'error';
 
 interface RadioState {
   station: RadioStation | null;
   status: RadioStatus;
   error: string | null;
+  /** True once the web player is needed (builds without native audio); the root layout mounts it. */
+  needsWebEngine: boolean;
+  /** 'native' plays in the background and on the lock screen; 'web' plays while the app is open. */
+  engine: 'native' | 'web';
   play: (station: RadioStation) => void;
   toggle: () => void;
   stop: () => void;
@@ -41,15 +45,22 @@ interface RadioState {
 
 const CONNECT_TIMEOUT_MS = 15000;
 
+// Two engines behind one shape. Native expo-audio is used when the build has it; otherwise a hidden
+// web view with hls.js plays the same streams (see components/radio/RadioWebEngine).
+interface Engine {
+  play: (station: RadioStation) => void;
+  pause: () => void;
+  stop: () => void;
+}
+
 type AudioLib = typeof import('expo-audio');
 type Player = ReturnType<AudioLib['createAudioPlayer']>;
 let lib: AudioLib | null | undefined;
-let player: Player | null = null;
+let nativePlayer: Player | null = null;
 let connectTimer: ReturnType<typeof setTimeout> | null = null;
 
 function audio(): AudioLib | null {
   if (lib !== undefined) return lib;
-  // expo-audio is native: a dev build made before it was added cannot play, so check first.
   if (!requireOptionalNativeModule('ExpoAudio')) return (lib = null);
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   lib = require('expo-audio') as AudioLib;
@@ -57,49 +68,91 @@ function audio(): AudioLib | null {
   return lib;
 }
 
+const nativeEngine: Engine = {
+  play: (station) => {
+    const a = audio();
+    if (!a) return;
+    if (nativePlayer) {
+      nativePlayer.clearLockScreenControls();
+      nativePlayer.remove();
+    }
+    nativePlayer = a.createAudioPlayer({ uri: station.url });
+    nativePlayer.addListener('playbackStatusUpdate', (st) => {
+      if (st.playing && !st.isBuffering) radioEvent(station.id, 'playing');
+      else if (st.playing && st.isBuffering) radioEvent(station.id, 'buffering');
+    });
+    nativePlayer.setActiveForLockScreen(true, { title: station.name, artist: 'Raha radio' });
+    nativePlayer.play();
+  },
+  pause: () => nativePlayer?.pause(),
+  stop: () => {
+    if (!nativePlayer) return;
+    nativePlayer.clearLockScreenControls();
+    nativePlayer.remove();
+    nativePlayer = null;
+  },
+};
+
+// The web engine is a message channel to the hidden web view, which may not exist yet: commands sent
+// before it is ready are held and the last one is delivered when it says it is ready.
+let webSend: ((msg: object) => void) | null = null;
+let pendingWeb: object | null = null;
+const toWeb = (msg: object) => (webSend ? webSend(msg) : (pendingWeb = msg));
+const webEngine: Engine = {
+  play: (station) => toWeb({ type: 'play', url: station.url, id: station.id }),
+  pause: () => toWeb({ type: 'pause' }),
+  stop: () => toWeb({ type: 'stop' }),
+};
+
+/** Called by RadioWebEngine when its page is ready (or unmounted, with null). */
+export function attachWebEngine(send: ((msg: object) => void) | null) {
+  webSend = send;
+  if (send && pendingWeb) {
+    send(pendingWeb);
+    pendingWeb = null;
+  }
+}
+
 const clearConnectTimer = () => {
   if (connectTimer) clearTimeout(connectTimer);
   connectTimer = null;
 };
 
+const engine = (): Engine => (audio() ? nativeEngine : webEngine);
+
+/** Playback events from either engine, for the station that is current. */
+export function radioEvent(stationId: string | undefined, type: 'playing' | 'buffering' | 'paused' | 'error', message?: string) {
+  const st = useRadioStore.getState();
+  if (!st.station || (stationId && stationId !== st.station.id)) return;
+  if (type === 'playing') {
+    clearConnectTimer();
+    if (st.status !== 'playing') useRadioStore.setState({ status: 'playing', error: null });
+  } else if (type === 'buffering') {
+    if (st.status === 'playing') useRadioStore.setState({ status: 'connecting' });
+  } else if (type === 'error') {
+    clearConnectTimer();
+    useRadioStore.setState({ status: 'error', error: `${st.station.name} could not be played${message ? ` (${message})` : ''}. Try again or pick another station.` });
+  }
+}
+
 export const useRadioStore = create<RadioState>((set, get) => ({
   station: null,
-  status: audio() ? 'idle' : 'unavailable',
+  status: 'idle',
   error: null,
+  needsWebEngine: false,
+  engine: audio() ? 'native' : 'web',
 
   play: (station) => {
-    const a = audio();
-    if (!a) {
-      set({ status: 'unavailable' });
-      return;
-    }
     clearConnectTimer();
-    if (player) {
-      player.clearLockScreenControls();
-      player.remove();
-    }
-    player = a.createAudioPlayer({ uri: station.url });
+    if (!audio() && !get().needsWebEngine) set({ needsWebEngine: true });
     set({ station, status: 'connecting', error: null });
-
-    player.addListener('playbackStatusUpdate', (s) => {
-      if (get().station?.id !== station.id) return;
-      if (s.playing && !s.isBuffering) {
-        clearConnectTimer();
-        if (get().status !== 'playing') set({ status: 'playing', error: null });
-      } else if (s.playing && s.isBuffering) {
-        if (get().status === 'playing') set({ status: 'connecting' });
-      }
-    });
-
+    engine().play(station);
     connectTimer = setTimeout(() => {
       if (get().station?.id === station.id && get().status === 'connecting') {
-        player?.pause();
+        engine().pause();
         set({ status: 'error', error: `${station.name} is not responding. Try again or pick another station.` });
       }
     }, CONNECT_TIMEOUT_MS);
-
-    player.setActiveForLockScreen(true, { title: station.name, artist: 'Raha radio' });
-    player.play();
   },
 
   toggle: () => {
@@ -107,7 +160,7 @@ export const useRadioStore = create<RadioState>((set, get) => ({
     if (!station) return;
     if (status === 'playing' || status === 'connecting') {
       clearConnectTimer();
-      player?.pause();
+      engine().pause();
       set({ status: 'paused' });
     } else {
       // A live stream resumed after a pause should be live again, so reconnect.
@@ -117,12 +170,8 @@ export const useRadioStore = create<RadioState>((set, get) => ({
 
   stop: () => {
     clearConnectTimer();
-    if (player) {
-      player.clearLockScreenControls();
-      player.remove();
-      player = null;
-    }
-    set({ station: null, status: audio() ? 'idle' : 'unavailable', error: null });
+    engine().stop();
+    set({ station: null, status: 'idle', error: null });
   },
 }));
 

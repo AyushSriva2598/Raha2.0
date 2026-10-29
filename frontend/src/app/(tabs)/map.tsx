@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { DownloadCloud, Layers, LocateFixed } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigateMap, NavigateMapType } from '@/components/navigate/NavigateMap';
-import { MapSheet, SHEET_COMPACT, SHEET_MIDDLE } from '@/components/navigate/MapSheet';
+import { MapSheet, SHEET_COMPACT_BROWSE, SHEET_COMPACT_TRIP, SHEET_MIDDLE } from '@/components/navigate/MapSheet';
 import { OfflineMapSheet } from '@/components/common/OfflineMapSheet';
 import { Colors, Shadows } from '@/constants/theme';
 import { DEFAULT_ORIGIN, SIKKIM_PLACES, type PlaceItem } from '@/constants/places';
@@ -104,7 +104,8 @@ export default function MapScreen() {
     }
   };
 
-  const sheetPx = snapIndex <= 0 ? SHEET_COMPACT : snapIndex === 1 ? height * SHEET_MIDDLE : height * 0.9;
+  const compact = destination ? SHEET_COMPACT_TRIP : SHEET_COMPACT_BROWSE;
+  const sheetPx = snapIndex <= 0 ? compact : snapIndex === 1 ? height * SHEET_MIDDLE : height * 0.9;
   const top = Math.max(insets.top, 12) + 8;
 
   return (

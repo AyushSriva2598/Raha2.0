@@ -22,7 +22,6 @@ const STATUS_TEXT = {
   playing: 'Live',
   paused: 'Paused',
   error: 'Could not connect',
-  unavailable: 'Not available on this build',
 } as const;
 
 export default function RadioScreen() {
@@ -33,6 +32,7 @@ export default function RadioScreen() {
   const play = useRadioStore((s) => s.play);
   const toggle = useRadioStore((s) => s.toggle);
   const stop = useRadioStore((s) => s.stop);
+  const engine = useRadioStore((s) => s.engine);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ q: string; list: RadioStation[] } | null>(null);
@@ -55,7 +55,6 @@ export default function RadioScreen() {
     };
   }, [trimmed]);
 
-  const unavailable = status === 'unavailable';
   const isActive = status === 'playing' || status === 'connecting';
 
   return (
@@ -82,18 +81,18 @@ export default function RadioScreen() {
               </Text>
             </View>
             <Text style={styles.playerTitle} numberOfLines={2} textBreakStrategy="balanced">
-              {unavailable ? 'Update Raha to listen' : (station?.name ?? 'All India Radio and more')}
+              {station?.name ?? 'All India Radio and more'}
             </Text>
             <Text style={styles.playerDetail} numberOfLines={2}>
-              {unavailable
-                ? 'This version of the app was built before radio was added. Install the latest build to play stations.'
-                : status === 'error'
-                  ? error
-                  : (station?.detail ?? 'Official bulletins and local stations, playing in the background and on the lock screen.')}
+              {status === 'error'
+                ? error
+                : (station?.detail ??
+                  (engine === 'native'
+                    ? 'Official bulletins and local stations. Keeps playing with the screen locked.'
+                    : 'Official bulletins and local stations, playing while Raha is open.'))}
             </Text>
           </View>
-          {!unavailable && (
-            <View style={styles.playerButtons}>
+          <View style={styles.playerButtons}>
               <Pressable
                 onPress={() => (station ? toggle() : play(BUILT_IN_STATIONS[0]))}
                 style={({ pressed }) => [styles.bigButton, pressed && styles.pressed]}
@@ -106,13 +105,12 @@ export default function RadioScreen() {
                   <Square size={16} color={Colors.onCoral} fill={Colors.onCoral} />
                 </Pressable>
               )}
-            </View>
-          )}
+          </View>
         </View>
 
         <Text style={styles.section}>Stations</Text>
         {BUILT_IN_STATIONS.map((s) => (
-          <StationRow key={s.id} station={s} current={station?.id === s.id} status={status} disabled={unavailable} onPress={() => (station?.id === s.id ? toggle() : play(s))} />
+          <StationRow key={s.id} station={s} current={station?.id === s.id} status={status} onPress={() => (station?.id === s.id ? toggle() : play(s))} />
         ))}
 
         <Text style={styles.section}>Find more stations</Text>
@@ -149,10 +147,11 @@ export default function RadioScreen() {
         {!searching &&
           trimmed.length >= 2 &&
           results?.list.map((s) => (
-            <StationRow key={s.id} station={s} current={station?.id === s.id} status={status} disabled={unavailable} onPress={() => (station?.id === s.id ? toggle() : play(s))} />
+            <StationRow key={s.id} station={s} current={station?.id === s.id} status={status} onPress={() => (station?.id === s.id ? toggle() : play(s))} />
           ))}
 
         <Text style={styles.note}>
+          {engine === 'web' ? 'This build plays radio while Raha is open. The next app update keeps it playing with the screen locked. ' : ''}
           All India Radio broadcasts official announcements. In an emergency, follow instructions from your local authorities first.
         </Text>
       </ScrollView>
@@ -164,13 +163,13 @@ function StationRow({
   station,
   current,
   status,
-  disabled,
+  disabled = false,
   onPress,
 }: {
   station: RadioStation;
   current: boolean;
   status: string;
-  disabled: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }) {
   const active = current && (status === 'playing' || status === 'connecting');

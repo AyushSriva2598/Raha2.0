@@ -18,6 +18,8 @@ import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif'
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastHost } from '@/components/common/ToastHost';
+import { RadioWebEngine } from '@/components/radio/RadioWebEngine';
+import { useRadioStore } from '@/services/radioStore';
 import { SplashScreenOverlay } from '@/components/splash-screen';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/services/authStore';
@@ -48,6 +50,7 @@ export default function RootLayout() {
   });
 
   const authStatus = useAuthStore((s) => s.status);
+  const needsWebRadio = useRadioStore((s) => s.needsWebEngine);
   const restore = useAuthStore((s) => s.restore);
 
   useEffect(() => {
@@ -86,6 +89,7 @@ export default function RootLayout() {
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
           </Stack.Protected>
         </Stack>
+        {needsWebRadio && <RadioWebEngine />}
         <ToastHost />
         {showSplash && (
           <SplashScreenOverlay onFinish={() => setShowSplash(false)} />

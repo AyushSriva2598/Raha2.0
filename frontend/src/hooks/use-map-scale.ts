@@ -13,6 +13,9 @@ export function scaleForLatDelta(latDelta: number): number {
  */
 export function useMapScale(initialLatDelta: number) {
   const [scale, setScale] = useState(scaleForLatDelta(initialLatDelta));
+  // Visible latitude span, for hiding labels when zoomed out (updated only past 15% changes).
+  const [latDelta, setLatDelta] = useState(initialLatDelta);
+  const latRef = useRef(initialLatDelta);
   const scaleRef = useRef(scale);
   const [tracksViewChanges, setTracks] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,6 +34,10 @@ export function useMapScale(initialLatDelta: number) {
 
   const onRegionChangeComplete = useCallback(
     (region: Region) => {
+      if (Math.abs(region.latitudeDelta / latRef.current - 1) > 0.15) {
+        latRef.current = region.latitudeDelta;
+        setLatDelta(region.latitudeDelta);
+      }
       const next = scaleForLatDelta(region.latitudeDelta);
       if (Math.abs(scaleRef.current - next) < 0.05) return;
       scaleRef.current = next;
@@ -41,5 +48,5 @@ export function useMapScale(initialLatDelta: number) {
     [settle]
   );
 
-  return { scale, tracksViewChanges, onRegionChangeComplete };
+  return { scale, latDelta, tracksViewChanges, onRegionChangeComplete };
 }

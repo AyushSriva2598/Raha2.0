@@ -43,9 +43,13 @@ export interface MapSheetProps {
   onSnapChange?: (index: number) => void;
 }
 
-export const SHEET_COMPACT = 210;
+// The lowest height shows exactly one block above the raised SOS button (which covers ~28 px of the
+// bottom middle): the search field and start row while browsing, or the trip header and Start.
+export const SHEET_COMPACT_BROWSE = 160;
+export const SHEET_COMPACT_TRIP = 236;
 export const SHEET_MIDDLE = 0.52;
-const SNAP_POINTS: (number | string)[] = [SHEET_COMPACT, `${SHEET_MIDDLE * 100}%`, '90%'];
+const BROWSE_SNAPS: (number | string)[] = [SHEET_COMPACT_BROWSE, `${SHEET_MIDDLE * 100}%`, '90%'];
+const TRIP_SNAPS: (number | string)[] = [SHEET_COMPACT_TRIP, `${SHEET_MIDDLE * 100}%`, '90%'];
 
 export function MapSheet(props: MapSheetProps) {
   const {
@@ -172,7 +176,7 @@ export function MapSheet(props: MapSheetProps) {
     <BottomSheet
       ref={sheet}
       index={0}
-      snapPoints={SNAP_POINTS}
+      snapPoints={destination ? TRIP_SNAPS : BROWSE_SNAPS}
       enableDynamicSizing={false}
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"

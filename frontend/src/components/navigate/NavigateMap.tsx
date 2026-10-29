@@ -38,7 +38,9 @@ export function NavigateMap({
   recenterKey,
 }: NavigateMapProps) {
   const mapRef = useRef<MapView>(null);
-  const { scale, tracksViewChanges, onRegionChangeComplete } = useMapScale(INITIAL_DELTA);
+  const { scale, latDelta, tracksViewChanges, onRegionChangeComplete } = useMapScale(INITIAL_DELTA);
+  // River names only once zoomed in enough that they do not collide (~25 km of the valley in view).
+  const showRiverLabels = latDelta < 0.22;
   const inRouteMode = destination !== null && routes.length > 0;
   const selectedRoute = routes.find((r) => r.id === selectedRouteId) || routes[0];
   const labels = useMemo(() => hazards.map((h) => ({ h, at: hazardLabelPoint(h) })), [hazards]);
@@ -106,9 +108,12 @@ export function NavigateMap({
           );
         })}
 
-        {/* Names only while browsing; during a trip the sheet names any zone the road touches. */}
+        {/* Names only while browsing; during a trip the sheet names any zone the road touches. The lake
+            is always named; river reaches only when zoomed in, so labels never pile up. */}
         {!destination &&
-          labels.map(({ h, at }) => (
+          labels
+            .filter(({ h }) => h.kind === 'circle' || showRiverLabels)
+            .map(({ h, at }) => (
             <Marker key={`label-${h.id}`} coordinate={at} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={tracksViewChanges} zIndex={2}>
               <View style={styles.markerBox}>
                 <LakeMarkerPill name={h.name} riskLevel={h.riskLevel} scale={scale} />
