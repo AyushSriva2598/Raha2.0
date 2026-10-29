@@ -20,6 +20,8 @@ export interface RouteOptionData {
   floodZonesCrossed: number;
   floodZonesClipped?: number;
   isRecommended?: boolean;
+  /** A plain sentence on what this road does to the flood zones; shown instead of the counts. */
+  summary?: string;
 }
 
 export interface RouteRowProps {
@@ -49,6 +51,10 @@ export function RouteRow({
   // Text and colour come from what this road really does to the flood zones.
   const getMeta = () => {
     const km = `${route.distanceKm.toFixed(1)} km`;
+    if (route.summary) {
+      const color = route.type === 'shortest' ? Colors.dangerDark : route.type === 'balanced' ? Colors.watchTextAlt : Colors.safe;
+      return { text: `${km} · ${route.summary}`, color };
+    }
     const crossed = route.floodZonesCrossed;
     const clipped = route.floodZonesClipped ?? 0;
     const zones = (n: number) => `${n} flood zone${n === 1 ? '' : 's'}`;
@@ -100,7 +106,7 @@ export function RouteRow({
             />
           )}
         </View>
-        <Text style={[styles.metaText, { color: meta.color }]} numberOfLines={1}>
+        <Text style={[styles.metaText, { color: meta.color }]} numberOfLines={2}>
           {meta.text}
         </Text>
       </View>

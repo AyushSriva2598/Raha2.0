@@ -1,10 +1,13 @@
 import { PinDrop, YouPin } from '@/components/common/MapPins';
+import { corridorRing, FLOOD_HAZARDS, type FloodCorridor } from '@/constants/floodHazards';
+import { getLakeCircleStyle } from '@/components/common/LakeCircle';
 import { RAHA_MAP_STYLE } from '@/constants/mapStyle';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, {
   Marker,
   Circle,
+  Polygon,
   Polyline,
   PROVIDER_GOOGLE,
   type Region,
@@ -14,6 +17,7 @@ import { Colors, Typography, Radii, Shadows } from '@/constants/theme';
 import { LakeConfig } from '@/constants/lakes';
 import {
   CHUNGTHANG_HIGH_GROUND,
+  LACHEN_CHU_COURSE,
   TEESTA_RIVER_COURSE,
 } from '@/constants/geoData';
 import { useMapScale } from '@/hooks/use-map-scale';
@@ -70,33 +74,30 @@ export function HomeMap({ lake, mapType = 'standard', bottomSheetHeight = 340 }:
           left: 12,
           right: 12,
         }}>
-        {/* The Teesta, the path a lake outburst would take: wide translucent band plus a thin core */}
-        <Polyline
-          coordinates={TEESTA_RIVER_COURSE}
-          strokeColor="rgba(70, 180, 206, 0.35)"
-          strokeWidth={px(18)}
-          lineCap="round"
-          lineJoin="round"
-          zIndex={3}
-        />
-        <Polyline
-          coordinates={TEESTA_RIVER_COURSE}
-          strokeColor="#46B4CE"
-          strokeWidth={px(3)}
-          lineCap="round"
-          lineJoin="round"
-          zIndex={4}
-        />
+        {/* The Lachen Chu and the Teesta, the path an outburst from the lake would take */}
+        {[LACHEN_CHU_COURSE, TEESTA_RIVER_COURSE].map((course, i) => (
+          <Polyline
+            key={i}
+            coordinates={course}
+            strokeColor="#46B4CE"
+            strokeWidth={px(3)}
+            lineCap="round"
+            lineJoin="round"
+            zIndex={4}
+          />
+        ))}
 
-        {/* Settlement flood reach */}
-        <Circle
-          center={userLocation}
-          radius={700}
-          fillColor="rgba(126, 219, 232, 0.30)"
-          strokeColor="#46B4CE"
-          strokeWidth={2}
-          zIndex={2}
-        />
+        {/* Flood corridors along the rivers, at true width, so they grow and shrink with zoom */}
+        {FLOOD_HAZARDS.filter((h): h is FloodCorridor => h.kind === 'corridor').map((h) => (
+          <Polygon
+            key={h.id}
+            coordinates={corridorRing(h)}
+            fillColor={getLakeCircleStyle(h.riskLevel).fillColor}
+            strokeColor={getLakeCircleStyle(h.riskLevel).strokeColor}
+            strokeWidth={1}
+            zIndex={2}
+          />
+        ))}
 
         {/* High ground destination */}
         <Marker
