@@ -1,5 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { PanResponder, StyleSheet, Text, View, type AccessibilityActionEvent } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text, View, type AccessibilityActionEvent } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Colors, Typography } from '@/constants/theme';
 import { GLOF_LEVEL_COLOR, GLOF_LEVEL_LABEL, GLOF_NO_LEVEL_COLOR } from '@/constants/glof';
 import type { GlofFrame } from '@/types';
@@ -19,14 +22,12 @@ const SIDE = THUMB / 2 + 4; // room so the thumb is never clipped at either end
 const ts = (d: string) => new Date(`${d}T00:00:00Z`).getTime();
 
 // Scrubber positioned by real time (not by frame count), coloured by alert level per segment.
+// The thumb follows the finger on the UI thread; the screen only hears about it when the chosen
+// image actually changes, and on release the thumb springs onto that image's date.
+const SNAP = { damping: 22, stiffness: 260, reduceMotion: ReduceMotion.System } as const;
+
 export function TimelineSlider({ frames, index, onChange, events = [] }: TimelineSliderProps) {
   const [width, setWidth] = useState(0);
-  const trackRef = useRef<View>(null);
-  const pageX = useRef(0);
-  const live = useRef({ frames, width, onChange });
-  useEffect(() => {
-    live.current = { frames, width, onChange };
-  });
 
   const { t0, span } = useMemo(() => {
     const a = ts(frames[0].date);
@@ -35,36 +36,44 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
   }, [frames]);
 
   const xOf = (date: string) => ((ts(date) - t0) / span) * width;
+  const xs = useMemo(() => (width ? frames.map((f) => ((ts(f.date) - t0) / span) * width) : []), [frames, width, t0, span]);
 
-  // Reads the latest frames from the ref so the long-lived gesture handlers never go stale.
-  const nearestIndex = (x: number) => {
-    const { frames: f, width: w } = live.current;
-    const a = ts(f[0].date);
-    const range = Math.max(1, ts(f[f.length - 1].date) - a);
-    const t = a + (Math.min(Math.max(x, 0), w) / Math.max(1, w)) * range;
+  const thumb = useSharedValue(0);
+  const dragging = useSharedValue(false);
+  const chosen = useSharedValue(index);
+
+  // Follow the index when it changes from outside (play, or a lake switch), unless a finger is on it.
+  useEffect(() => {
+    chosen.set(index);
+    if (!dragging.get() && xs.length) thumb.set(withTiming(xs[Math.min(index, xs.length - 1)], { duration: 160, reduceMotion: ReduceMotion.System }));
+  }, [index, xs, chosen, dragging, thumb]);
+
+  const pick = (x: number) => {
+    'worklet';
+    const clamped = Math.min(Math.max(x, 0), width);
+    thumb.set(clamped);
     let best = 0;
-    for (let i = 1; i < f.length; i++) if (Math.abs(ts(f[i].date) - t) < Math.abs(ts(f[best].date) - t)) best = i;
-    return best;
+    for (let i = 1; i < xs.length; i++) if (Math.abs(xs[i] - clamped) < Math.abs(xs[best] - clamped)) best = i;
+    if (best !== chosen.get()) {
+      chosen.set(best);
+      scheduleOnRN(onChange, best);
+    }
   };
 
-  // Handlers only touch refs from inside gesture callbacks, never while rendering.
-  /* eslint-disable react-hooks/refs */
-  const [pan] = useState(() =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: (_e, g) => {
-          // Window coordinates are reliable even when the touch lands on the thumb.
-          trackRef.current?.measureInWindow((x) => {
-            pageX.current = x;
-            live.current.onChange(nearestIndex(g.x0 - x));
-          });
-        },
-        onPanResponderMove: (_e, g) => live.current.onChange(nearestIndex(g.moveX - pageX.current)),
-      })
-  );
-  /* eslint-enable react-hooks/refs */
+  const pan = Gesture.Pan()
+    .minDistance(0)
+    .shouldCancelWhenOutside(false)
+    .onBegin((e) => {
+      dragging.set(true);
+      pick(e.x - SIDE);
+    })
+    .onUpdate((e) => pick(e.x - SIDE))
+    .onFinalize(() => {
+      dragging.set(false);
+      if (xs.length) thumb.set(withSpring(xs[chosen.get()], SNAP));
+    });
+
+  const thumbStyle = useAnimatedStyle(() => ({ transform: [{ translateX: thumb.get() - THUMB / 2 }] }));
 
   const current = frames[index];
   const years = useMemo(() => {
@@ -79,8 +88,6 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
     if (e.nativeEvent.actionName === 'increment') onChange(Math.min(frames.length - 1, index + 1));
     if (e.nativeEvent.actionName === 'decrement') onChange(Math.max(0, index - 1));
   };
-
-  const thumbX = width ? xOf(current.date) : 0;
 
   return (
     <View
@@ -101,8 +108,9 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
             {ev.label}
           </Text>
         ))}
-      <View style={styles.touch} {...pan.panHandlers}>
-        <View ref={trackRef} style={styles.track} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      <GestureDetector gesture={pan}>
+      <View style={styles.touch}>
+        <View style={styles.track} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
           {width > 0 &&
             frames.map((f, i) => {
               const x0 = xOf(f.date);
@@ -125,12 +133,13 @@ export function TimelineSlider({ frames, index, onChange, events = [] }: Timelin
               <View key={ev.date} style={[styles.event, { left: xOf(ev.date) - 1 }]} />
             ))}
           {width > 0 && (
-            <View style={[styles.thumb, { left: thumbX - THUMB / 2 }]}>
+            <Animated.View style={[styles.thumb, thumbStyle]}>
               <View style={styles.thumbDot} />
-            </View>
+            </Animated.View>
           )}
         </View>
       </View>
+      </GestureDetector>
       <View style={styles.axis}>
         {years.map((y) => (
           <Text key={y.year} style={[styles.year, { left: SIDE + y.x - 16 }]}>
@@ -151,6 +160,7 @@ const styles = StyleSheet.create({
   event: { position: 'absolute', top: -5, width: 2, height: TRACK_H + 10, backgroundColor: Colors.ink, borderRadius: 1 },
   thumb: {
     position: 'absolute',
+    left: 0,
     top: -(THUMB - TRACK_H) / 2,
     width: THUMB,
     height: THUMB,
