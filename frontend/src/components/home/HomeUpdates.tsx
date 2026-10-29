@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
@@ -9,7 +10,7 @@ import { useRevalidate } from '@/hooks/use-revalidate';
 
 // Real conditions and latest public updates for the area, linked to the Activity articles.
 export function HomeUpdates() {
-  const { items, status, hydrate, refresh } = useFeedStore();
+  const { items, status, hydrate, refresh } = useFeedStore(useShallow((s) => ({ items: s.items, status: s.status, hydrate: s.hydrate, refresh: s.refresh })));
 
   useEffect(() => {
     hydrate().then(() => refresh());

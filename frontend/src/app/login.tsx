@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -43,8 +44,8 @@ const ERROR_KEY: Record<AuthErrorKind, 'errNetwork' | 'errPhone' | 'errWrong' | 
 };
 
 export default function LoginScreen() {
-  const { language, setLanguage, t } = useAppStore();
-  const { requestCode, verifyCode } = useAuthStore();
+  const { language, setLanguage, t } = useAppStore(useShallow((s) => ({ language: s.language, setLanguage: s.setLanguage, t: s.t })));
+  const { requestCode, verifyCode } = useAuthStore(useShallow((s) => ({ requestCode: s.requestCode, verifyCode: s.verifyCode })));
   const s = t().auth;
 
   const [step, setStep] = useState<'phone' | 'code'>('phone');

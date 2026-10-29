@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useState } from 'react';
 import {
   View,
@@ -23,7 +24,7 @@ import {
 } from 'lucide-react-native';
 
 export default function OnboardingScreen() {
-  const { setLanguage, language } = useAppStore();
+  const { setLanguage, language } = useAppStore(useShallow((s) => ({ setLanguage: s.setLanguage, language: s.language })));
   const [step, setStep] = useState(1);
   const [phone, setPhone] = useState('+977 9841-582910');
   const otp = ['4', '8', '2', '0', '1', '9'];

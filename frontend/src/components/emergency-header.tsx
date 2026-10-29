@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useState } from 'react';
 import {
   View,
@@ -22,13 +23,7 @@ export const EmergencyHeader: React.FC<EmergencyHeaderProps> = ({
   bannerText,
   onSosPress,
 }) => {
-  const {
-    activeLakeId,
-    activeLake,
-    setActiveLakeId,
-    surgeMinutesRemaining,
-    openSosModal,
-  } = useAppStore();
+  const { activeLakeId, activeLake, setActiveLakeId, surgeMinutesRemaining, openSosModal } = useAppStore(useShallow((s) => ({ activeLakeId: s.activeLakeId, activeLake: s.activeLake, setActiveLakeId: s.setActiveLakeId, surgeMinutesRemaining: s.surgeMinutesRemaining, openSosModal: s.openSosModal })));
 
   const [isLakePickerOpen, setIsLakePickerOpen] = useState(false);
 

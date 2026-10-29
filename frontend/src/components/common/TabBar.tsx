@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React from 'react';
 import {
   View,
@@ -21,7 +22,7 @@ import { useAppStore } from '@/store/useAppStore';
 export function TabBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const { openSosModal } = useAppStore();
+  const { openSosModal } = useAppStore(useShallow((s) => ({ openSosModal: s.openSosModal })));
 
   const isHome = pathname === '/' || pathname === '/index' || pathname === '';
   const isMap = pathname.includes('/map');

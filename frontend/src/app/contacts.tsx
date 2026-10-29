@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -22,7 +23,7 @@ const initialsOf = (name: string) =>
 
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
-  const { userProfile, toggleContact, removeContact, openAddContactModal } = useAppStore();
+  const { userProfile, toggleContact, removeContact, openAddContactModal } = useAppStore(useShallow((s) => ({ userProfile: s.userProfile, toggleContact: s.toggleContact, removeContact: s.removeContact, openAddContactModal: s.openAddContactModal })));
   const [tab, setTab] = useState<Tab>('book');
   const [query, setQuery] = useState('');
 

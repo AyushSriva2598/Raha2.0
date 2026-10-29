@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,15 +14,8 @@ import { Radio, MapPin, CheckCircle, AlertTriangle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function EmergencySosModal() {
-  const {
-    isSosModalOpen,
-    openSosModal,
-    triggerEmergencySos,
-    userProfile,
-    alertLevel,
-    sosBroadcastResult: result,
-    t,
-  } = useAppStore();
+  const { isSosModalOpen, openSosModal, triggerEmergencySos, userProfile, alertLevel, sosBroadcastResult: result, t } = useAppStore(useShallow((s) => ({ isSosModalOpen: s.isSosModalOpen, openSosModal: s.openSosModal, triggerEmergencySos: s.triggerEmergencySos, userProfile: s.userProfile, alertLevel: s.alertLevel, sosBroadcastResult: s.sosBroadcastResult, t: s.t })));
+  useAppStore((s) => s.language); // re-render when the language changes, since t() reads it
 
   const [countdown, setCountdown] = useState(5);
   const [isDispatched, setIsDispatched] = useState(false);

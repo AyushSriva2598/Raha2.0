@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Colors, Radii } from '@/constants/tokens';
@@ -9,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export function StitchBottomBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const { alertLevel, t } = useAppStore();
+  const { alertLevel, t } = useAppStore(useShallow((s) => ({ alertLevel: s.alertLevel, t: s.t })));
+  useAppStore((s) => s.language); // re-render when the language changes, since t() reads it
   const strings = t();
 
   const isHome = pathname === '/' || pathname === '/index' || pathname === '';

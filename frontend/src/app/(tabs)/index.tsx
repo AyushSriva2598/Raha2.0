@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Modal, Text, Pressable } from 'react-native';
 import {
@@ -21,19 +22,7 @@ import { LAKES_REGISTRY, LakeId } from '@/constants/lakes';
 import { X, Check } from 'lucide-react-native';
 
 export default function HomeScreen() {
-  const {
-    activeLakeId,
-    activeLake,
-    setActiveLakeId,
-    alertLevel,
-    setAlertLevel,
-    surgeMinutesRemaining,
-    decrementSurgeMinutes,
-    safePoints,
-    events,
-    openSosModal,
-    init,
-  } = useAppStore();
+  const { activeLakeId, activeLake, setActiveLakeId, alertLevel, setAlertLevel, surgeMinutesRemaining, decrementSurgeMinutes, safePoints, events, openSosModal, init } = useAppStore(useShallow((s) => ({ activeLakeId: s.activeLakeId, activeLake: s.activeLake, setActiveLakeId: s.setActiveLakeId, alertLevel: s.alertLevel, setAlertLevel: s.setAlertLevel, surgeMinutesRemaining: s.surgeMinutesRemaining, decrementSurgeMinutes: s.decrementSurgeMinutes, safePoints: s.safePoints, events: s.events, openSosModal: s.openSosModal, init: s.init })));
 
   const [mapType, setMapType] = useState<'standard' | 'satellite' | 'terrain'>('standard');
   const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);

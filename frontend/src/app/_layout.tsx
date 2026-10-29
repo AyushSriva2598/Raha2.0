@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -34,7 +35,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
-  const { init } = useAppStore();
+  const { init } = useAppStore(useShallow((s) => ({ init: s.init })));
 
   const [fontsLoaded, fontError] = useFonts({
     AtkinsonHyperlegible_400Regular,

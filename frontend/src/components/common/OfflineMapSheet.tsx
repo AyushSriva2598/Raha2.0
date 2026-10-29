@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { SwipeSheet } from '@/components/common/SwipeSheet';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -21,7 +22,7 @@ const INCLUDED = [
 
 export function OfflineMapSheet({ visible, onClose }: OfflineMapSheetProps) {
   const insets = useSafeAreaInsets();
-  const { status, lastUpdated, sizeKb, persistent, error, download } = useOfflineStore();
+  const { status, lastUpdated, sizeKb, persistent, error, download } = useOfflineStore(useShallow((s) => ({ status: s.status, lastUpdated: s.lastUpdated, sizeKb: s.sizeKb, persistent: s.persistent, error: s.error, download: s.download })));
 
   const isDownloading = status === 'downloading';
   const isReady = status === 'ready';

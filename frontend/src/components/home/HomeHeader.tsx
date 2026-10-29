@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React from 'react';
 import Animated, { type AnimatedStyle } from 'react-native-reanimated';
 import {
@@ -32,7 +33,8 @@ const LEVEL_COLOR: Record<AlertLevel, string> = {
 
 export function HomeHeader({ onToggleMenu, fadeStyle, fadeProps }: HomeHeaderProps) {
   const insets = useSafeAreaInsets();
-  const { userProfile, activeLake, alertLevel, t } = useAppStore();
+  const { userProfile, activeLake, alertLevel, t } = useAppStore(useShallow((s) => ({ userProfile: s.userProfile, activeLake: s.activeLake, alertLevel: s.alertLevel, t: s.t })));
+  useAppStore((s) => s.language); // re-render when the language changes, since t() reads it
   const strings = t();
 
   const firstName = userProfile?.name?.trim().split(/\s+/)[0] ?? '';

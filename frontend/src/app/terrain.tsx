@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type LayoutChangeEvent,
@@ -76,7 +77,7 @@ function SheetHandle() {
 export default function TerrainScreen() {
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const { lakes, byId, status, loadLakes, loadLake } = useGlofStore();
+  const { lakes, byId, status, loadLakes, loadLake } = useGlofStore(useShallow((s) => ({ lakes: s.lakes, byId: s.byId, status: s.status, loadLakes: s.loadLakes, loadLake: s.loadLake })));
   const [lakeId, setLakeId] = useState(DEFAULT_GLOF_LAKES[0].id);
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);

@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { SwipeSheet } from '@/components/common/SwipeSheet';
 import React, { useRef, useState } from 'react';
 import {
@@ -14,8 +15,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { UserPlus, X } from 'lucide-react-native';
 
 export function AddEmergencyContactModal() {
-  const { isAddContactModalOpen, openAddContactModal, addEmergencyContact } =
-    useAppStore();
+  const { isAddContactModalOpen, openAddContactModal, addEmergencyContact } = useAppStore(useShallow((s) => ({ isAddContactModalOpen: s.isAddContactModalOpen, openAddContactModal: s.openAddContactModal, addEmergencyContact: s.addEmergencyContact })));
 
   const [name, setName] = useState('');
   const [relation, setRelation] = useState('Sister');

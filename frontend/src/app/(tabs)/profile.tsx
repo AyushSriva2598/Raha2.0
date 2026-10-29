@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useRadioStore } from '@/services/radioStore';
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -35,26 +36,14 @@ import { BackendCheck } from '@/components/common/BackendCheck';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    activeLake,
-    userProfile,
-    language,
-    setLanguage,
-    toggleContact,
-    openAddContactModal,
-    openSosModal,
-    triggerEmergencySos,
-    sosDelayMode,
-    setSosDelayMode,
-    t,
-  } = useAppStore();
+  const { activeLake, userProfile, language, setLanguage, toggleContact, openAddContactModal, openSosModal, triggerEmergencySos, sosDelayMode, setSosDelayMode, t } = useAppStore(useShallow((s) => ({ activeLake: s.activeLake, userProfile: s.userProfile, language: s.language, setLanguage: s.setLanguage, toggleContact: s.toggleContact, openAddContactModal: s.openAddContactModal, openSosModal: s.openSosModal, triggerEmergencySos: s.triggerEmergencySos, sosDelayMode: s.sosDelayMode, setSosDelayMode: s.setSosDelayMode, t: s.t })));
   const strings = t();
   const radioStation = useRadioStore((st) => st.station);
   const radioStatus = useRadioStore((st) => st.status);
   const signOut = useAuthStore((st) => st.signOut);
 
   const [isOfflineSheetOpen, setIsOfflineSheetOpen] = useState(false);
-  const offline = useOfflineStore();
+  const offline = useOfflineStore(useShallow((s) => ({ lastUpdated: s.lastUpdated, sizeKb: s.sizeKb, status: s.status })));
   const [isHoldingSos, setIsHoldingSos] = useState(false);
   const [holdSecondsRemaining, setHoldSecondsRemaining] = useState(3);
   const [holdProgressPct, setHoldProgressPct] = useState(0);

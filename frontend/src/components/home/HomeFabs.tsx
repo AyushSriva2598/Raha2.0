@@ -18,6 +18,7 @@ export interface HomeFabsProps {
 // Round floating map controls stacked on the right edge, each a full 48dp target.
 export function HomeFabs({ mapType, onToggleLayers, fadeStyle, fadeProps }: HomeFabsProps) {
   const insets = useSafeAreaInsets();
+  useAppStore((s) => s.language); // re-render when the language changes
   const strings = useAppStore((s) => s.t)();
   const satellite = mapType === 'satellite';
   const radioOn = useRadioStore((s) => s.status === 'playing' || s.status === 'connecting');

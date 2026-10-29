@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -127,7 +128,7 @@ function FeedCard({ item, expanded, onToggle }: { item: FeedItem | null; expande
 }
 
 export default function ActivityScreen() {
-  const { items, status, generatedAt, sources, hydrate, refresh } = useFeedStore();
+  const { items, status, generatedAt, sources, hydrate, refresh } = useFeedStore(useShallow((s) => ({ items: s.items, status: s.status, generatedAt: s.generatedAt, sources: s.sources, hydrate: s.hydrate, refresh: s.refresh })));
   const [filter, setFilter] = useState<Filter>('all');
   const [openId, setOpenId] = useState<string | null>(null);
 
