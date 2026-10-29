@@ -1,3 +1,4 @@
+import { useRadioStore } from '@/services/radioStore';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -6,7 +7,6 @@ import {
   ScrollView,
   Pressable,
   Switch,
-  Alert,
   Platform,
   Vibration,
 } from 'react-native';
@@ -27,7 +27,6 @@ import {
   DownloadCloud,
   CheckCircle2,
   Languages,
-  Mic,
   Clock,
   MapPin,
   } from 'lucide-react-native';
@@ -50,6 +49,8 @@ export default function ProfileScreen() {
     t,
   } = useAppStore();
   const strings = t();
+  const radioStation = useRadioStore((st) => st.station);
+  const radioStatus = useRadioStore((st) => st.status);
   const signOut = useAuthStore((st) => st.signOut);
 
   const [isOfflineSheetOpen, setIsOfflineSheetOpen] = useState(false);
@@ -124,14 +125,6 @@ export default function ProfileScreen() {
     setHoldSecondsRemaining(3);
   };
 
-  const handleVhfBroadcast = () => {
-    const channelName =
-      'Channel 04 • Sikkim SAR (156.800 MHz)';
-    Alert.alert(
-      'VHF Radio Simplex Relay Active',
-      `Tuned to ${channelName}.\nTransceiver mode: High-power simplex (5W).\nMonitoring emergency distress hailing frequency.`
-    );
-  };
 
   const handleUpdateMaps = () => setIsOfflineSheetOpen(true);
 
@@ -258,33 +251,29 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Emergency VHF Radio Card */}
-        <View style={styles.vhfRadioCard}>
+        {/* Radio: real broadcasts, played inside the app */}
+        <Pressable
+          onPress={() => router.push('/radio')}
+          style={({ pressed }) => [styles.vhfRadioCard, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Open radio">
           <View style={styles.vhfCardHeaderRow}>
             <View style={styles.vhfTitleRow}>
               <RadioReceiver size={18} color={Colors.moraineInk} strokeWidth={2.2} />
-              <Text style={styles.vhfCardTitle}>
-                CHANNEL 04 • SIKKIM SAR (156.800 MHZ)
-              </Text>
+              <Text style={styles.vhfCardTitle}>RADIO</Text>
             </View>
-            <View style={styles.activeBandBadge}>
-              <Text style={styles.activeBandText}>Active Band</Text>
-            </View>
+            {radioStation && (
+              <View style={styles.activeBandBadge}>
+                <Text style={styles.activeBandText}>{radioStatus === 'playing' ? 'Playing' : 'Paused'}</Text>
+              </View>
+            )}
           </View>
-
           <Text style={styles.vhfCardDesc}>
-            Simplex tactical voice frequency for local emergency rescue, helicopter dispatch, and safe haven wardens.
+            {radioStation
+              ? radioStation.name
+              : 'Listen to All India Radio bulletins and other stations, even with the screen locked.'}
           </Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.vhfActionButton, pressed && styles.pressed]}
-            onPress={handleVhfBroadcast}>
-            <Mic size={15} color="#FFFFFF" strokeWidth={2.4} />
-            <Text style={styles.vhfActionText}>
-              Listen / Broadcast on VHF 156.800 MHz
-            </Text>
-          </Pressable>
-        </View>
+        </Pressable>
 
         {/* Emergency Kin Status Section */}
         <View style={styles.kinSection}>

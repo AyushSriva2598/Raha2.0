@@ -77,6 +77,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="terrain" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="contacts" options={{ headerShown: false }} />
+            <Stack.Screen name="radio" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="safety-topic/[topic]" options={{ headerShown: false }} />
             <Stack.Screen name="onboarding" options={{ presentation: 'modal', headerShown: false }} />
           </Stack.Protected>
