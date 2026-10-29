@@ -39,6 +39,16 @@ test('OsrmProvider asks for lon,lat order and alternatives, and fails loudly on 
   await assert.rejects(bad.route({ latitude: 1, longitude: 1 }, { latitude: 2, longitude: 2 }), /503/);
 });
 
+test('a via point is sent between the two ends, without alternatives', async () => {
+  let seen = '';
+  const p = new OsrmProvider('http://osrm.test', async (url) => {
+    seen = url;
+    return { ok: true, status: 200, json: async () => body };
+  });
+  await p.route({ latitude: 27.6, longitude: 88.6 }, { latitude: 27.7, longitude: 88.7 }, undefined, { latitude: 27.65, longitude: 88.62 });
+  assert.match(seen, /driving\/88\.6,27\.6;88\.62,27\.65;88\.7,27\.7\?alternatives=false/);
+});
+
 test('findRoutes caches a repeated trip', async () => {
   let calls = 0;
   setRoutingProvider({ name: 'fake', async route() { calls += 1; return parseOsrm(body); } });

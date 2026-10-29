@@ -18,7 +18,8 @@ export interface RoadRoute {
 
 export interface RoutingProvider {
   readonly name: string;
-  route(from: LatLon, to: LatLon, signal?: AbortSignal): Promise<RoadRoute[]>;
+  /** `via` forces the road through one point, used to look for a detour around a flood zone. */
+  route(from: LatLon, to: LatLon, signal?: AbortSignal, via?: LatLon): Promise<RoadRoute[]>;
 }
 
 type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
@@ -35,9 +36,12 @@ export class OsrmProvider implements RoutingProvider {
     private readonly fetchImpl: FetchLike = fetch as unknown as FetchLike
   ) {}
 
-  async route(from: LatLon, to: LatLon, signal?: AbortSignal): Promise<RoadRoute[]> {
-    const path = `${from.longitude},${from.latitude};${to.longitude},${to.latitude}`;
-    const url = `${this.baseUrl}/route/v1/driving/${path}?alternatives=3&overview=full&geometries=geojson&steps=false`;
+  async route(from: LatLon, to: LatLon, signal?: AbortSignal, via?: LatLon): Promise<RoadRoute[]> {
+    const points = via ? [from, via, to] : [from, to];
+    const path = points.map((p) => `${p.longitude},${p.latitude}`).join(';');
+    // OSRM only offers alternatives between two points; a via route is a single road.
+    const alt = via ? 'false' : '3';
+    const url = `${this.baseUrl}/route/v1/driving/${path}?alternatives=${alt}&overview=full&geometries=geojson&steps=false`;
     const res = await this.fetchImpl(url, { signal });
     if (!res.ok) throw new Error(`routing engine answered ${res.status}`);
     return parseOsrm((await res.json()) as OsrmResponse);
@@ -67,19 +71,20 @@ export function setRoutingProvider(p: RoutingProvider | null) {
 // Small cache so repeated requests for the same trip (retries, re-renders) do not hit the engine.
 const cache = new Map<string, { at: number; routes: RoadRoute[] }>();
 const TTL_MS = 5 * 60 * 1000;
-const key = (a: LatLon, b: LatLon) => [a.latitude, a.longitude, b.latitude, b.longitude].map((n) => n.toFixed(4)).join(',');
+const key = (a: LatLon, b: LatLon, v?: LatLon) =>
+  [a, b, ...(v ? [v] : [])].flatMap((p) => [p.latitude, p.longitude]).map((n) => n.toFixed(4)).join(',');
 
-export async function findRoutes(from: LatLon, to: LatLon): Promise<{ source: string; routes: RoadRoute[] }> {
+export async function findRoutes(from: LatLon, to: LatLon, via?: LatLon): Promise<{ source: string; routes: RoadRoute[] }> {
   const p = routingProvider();
   if (!p) throw new Error('Road routing is not configured on this server');
-  const k = key(from, to);
+  const k = key(from, to, via);
   const hit = cache.get(k);
   if (hit && Date.now() - hit.at < TTL_MS) return { source: p.name, routes: hit.routes };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.routing.timeoutMs);
   try {
-    const routes = await p.route(from, to, controller.signal);
+    const routes = await p.route(from, to, controller.signal, via);
     cache.set(k, { at: Date.now(), routes });
     return { source: p.name, routes };
   } finally {
